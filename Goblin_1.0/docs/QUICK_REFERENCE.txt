@@ -1,0 +1,159 @@
+═══════════════════════════════════════════════════════════════════════════════
+                    🧙 GOBLIN – QUICK REFERENCE GUIDE
+═══════════════════════════════════════════════════════════════════════════════
+
+📖 BEFORE YOU START
+────────────────────────────────────────────────────────────────────────────────
+1. Read: GET_STARTED_FIRST.md (this folder)
+2. System requirements: Python 3.9+, 4 GB RAM, 2 GB disk
+3. Time: Installation takes 10-15 minutes on first run
+🎯 Start with [QUICKSTART.md](QUICKSTART.md)
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🚀 INSTALLATION (Choose One)
+────────────────────────────────────────────────────────────────────────────────
+
+OPTION A: Pre-Built (Easiest)
+  → Find Goblin.exe, Goblin.app, or Goblin in the dist/ folder
+   → Double-click it
+   → Done!
+
+OPTION B: Build from Source
+   → Open terminal in this folder
+   → Run: pip install -r REQUIREMENTS.txt
+   → Run: python installers/build.py
+   → Run: python installers/install_desktop.py
+
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🎯 SUPPORTED FILES
+────────────────────────────────────────────────────────────────────────────────
+Audio:  MP3, WAV, M4A, FLAC, OGG, WEBM, MP4
+Images: JPG, PNG, BMP, GIF, TIFF, WEBP
+
+═══════════════════════════════════════════════════════════════════════════════
+
+⚙️ MODES EXPLAINED
+────────────────────────────────────────────────────────────────────────────────
+
+OFFLINE (Default) ✓
+  • Works anywhere (no internet needed)
+  • Free
+  • Slower (~1-5 min per file)
+  • Decent quality
+  • No API key needed
+
+ONLINE (Optional)
+  • Needs internet & OpenAI API key
+  • Costs ~$0.01-0.05 per file
+  • Much faster (~10-30 sec per file)
+  • Better quality
+  • Get key: https://platform.openai.com/api-keys
+
+See [MODES.md](guides/MODES.md) for detailed explanation.
+
+═══════════════════════════════════════════════════════════════════════════════
+
+💡 TIPS & TRICKS
+────────────────────────────────────────────────────────────────────────────────
+✓ Batch processing: Add multiple files, they process one at a time
+✓ Offline first: Use offline mode for free, fast processing
+✓ Online for best: Use online mode for accuracy when you need it
+✓ Smart naming: Enable "Nommage intelligent" for auto-rename by content
+✓ Custom folder: Set custom output folder in options
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📋 KEYBOARD SHORTCUTS
+────────────────────────────────────────────────────────────────────────────────
+Ctrl+O / Cmd+O    Open file dialog
+Ctrl+Q / Cmd+Q    Quit
+Tab               Navigate controls
+Enter             Confirm in text fields
+
+═══════════════════════════════════════════════════════════════════════════════
+
+❓ COMMON QUESTIONS
+────────────────────────────────────────────────────────────────────────────────
+
+Q: Where are my files saved?
+A: In a "transcriptions/" folder (changeable in options)
+
+Q: Why is it slow on first run?
+A: Downloading offline models (~2 GB). Only happens once.
+
+Q: Can I use my own API key?
+A: Yes! Click 🔑 button and paste your key, then toggle to "En ligne"
+
+Q: Is my data safe with online mode?
+A: Yes. OpenAI doesn't store your files.
+
+Q: Which model should I use?
+A: tiny (fast), base (good), medium (best quality)
+
+Q: Can I rename files?
+A: Enable "Nommage intelligent" for AI-based auto-rename
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📚 DOCUMENTATION
+────────────────────────────────────────────────────────────────────────────────
+GET_STARTED_FIRST.md  ← Start here
+QUICKSTART.md         ← How to use
+INSTALL.md           ← Installation help
+docs/MODES.md        ← Offline vs Online details
+docs/FEATURES.md     ← Full feature list
+docs/USER_GUIDE.md   ← Complete reference
+
+See [README.md](README.md) for all documentation links.
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🆘 TROUBLESHOOTING
+────────────────────────────────────────────────────────────────────────────────
+
+App won't launch?
+  → Check Python version (needs 3.9+)
+  → Reinstall: pip install -r REQUIREMENTS.txt
+  → Try building again: python installers/build.py
+    → Reinstall: pip install -r build/REQUIREMENTS.txt
+    → Try building again: python build/installers/build.py
+
+Permission denied (Linux)?
+  → Run: chmod +x Goblin
+
+Antivirus warning (Windows)?
+  → It's safe (PyInstaller creates it this way)
+  → Add Goblin.exe to whitelist if needed
+
+App is slow?
+  → First run downloads models (~2 GB), only happens once
+  → Use smaller Whisper model (tiny) for speed
+  → Use online mode for much faster processing
+
+Files not saving?
+  → Check that output folder path is valid
+  → Ensure you have write permissions to the folder
+  → Try using default "transcriptions/" folder
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🔗 USEFUL LINKS
+────────────────────────────────────────────────────────────────────────────────
+OpenAI API Keys:    https://platform.openai.com/api-keys
+View Pricing:       https://openai.com/pricing
+
+═══════════════════════════════════════════════════════════════════════════════
+
+✅ YOU'RE READY!
+
+1. Install Goblin (Option A or B above)
+2. Read GET_STARTED_FIRST.md
+3. Try transcribing a test file
+4. Check docs/ if you have questions
+
+                    Enjoy! 🧙✨
+
+═══════════════════════════════════════════════════════════════════════════════

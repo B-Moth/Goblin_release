@@ -1,0 +1,74 @@
+MIT License
+
+Copyright (c) 2026 Lucas B-Moth
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+## Third-Party License Notice
+
+Goblin uses the following open-source libraries:
+
+### Audio Processing
+- **faster-whisper** (MIT) — https://github.com/SYSTRAN/faster-whisper
+  Optimized implementation of OpenAI's Whisper
+
+### Image Processing
+- **Pillow** (HPND) — https://python-pillow.org
+  Python Imaging Library
+- **PaddleOCR** (Apache 2.0) — https://github.com/PaddlePaddle/PaddleOCR
+  Optical character recognition
+- **PaddlePaddle** (Apache 2.0) — https://github.com/PaddlePaddle/Paddle
+  Machine learning framework
+- **Transformers** (Apache 2.0) — https://huggingface.co/transformers
+  State-of-the-art NLP models
+
+### Audio Metadata
+- **mutagen** (MIT) — https://github.com/quodlibet/mutagen
+  Read and write audio metadata
+
+### Web Framework
+- **Flask** (BSD 3-Clause) — https://flask.palletsprojects.com
+  Lightweight web framework
+- **Werkzeug** (BSD 3-Clause) — https://werkzeug.palletsprojects.com
+  WSGI application library
+
+### Text Processing
+- **Markdown** (BSD 3-Clause) — https://python-markdown.github.io
+  Markdown parser and HTML converter
+
+### Utilities
+- **Click** (BSD 3-Clause) — https://click.palletsprojects.com
+  Command-line interface creation kit
+- **OpenAI** (MIT) — https://github.com/openai/openai-python
+  OpenAI Python client library
+- **send2trash** (MIT) — https://github.com/arsenetar/send2trash
+  Send files to trash (recycle bin) instead of deleting
+- **PyTorch** (BSD) — https://pytorch.org
+  Machine learning framework
+
+### UI Framework
+- **Tkinter** (PSF License) — Built-in Python module
+  GUI toolkit for native UI
+
+Full license texts available at:
+- https://opensource.org/licenses/MIT
+- https://opensource.org/licenses/Apache-2.0
+- https://opensource.org/licenses/BSD-3-Clause
