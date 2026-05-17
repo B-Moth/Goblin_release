@@ -34,6 +34,11 @@ from goblin.smart_naming import generate_smart_name, extract_excerpt
 from goblin.metadata import get_file_creation_date
 from goblin.offline import get_whisper_model_size
 from goblin.offline import transcribe_audio_offline, transcribe_image_offline
+from goblin.ollama_runtime import (
+    check_ollama_model,
+    get_ollama_pull_status,
+    start_ollama_pull,
+)
 from goblin.transcription_editor import (
     build_edited_transcription_filename,
     get_editor_default_local_model,
@@ -793,21 +798,6 @@ def create_app(output_dir: str = "transcriptions", offline: bool = False) -> Fla
         try:
             resolved_provider, resolved_model = resolve_editor_runtime(provider, local_model)
             metadata = {"provider": resolved_provider, "model": resolved_model, "usage": {}}
-            # If local provider: ensure model present or instruct frontend to start background pull
-            if resolved_provider == 'local':
-                # If an Ollama job is in progress, return 202 so frontend can wait
-                job = app.ollama_jobs.get(resolved_model)
-                if job and job.get('status') == 'pulling':
-                    return jsonify({'ok': False, 'error': 'model_pulling', 'message': 'Model is currently being downloaded'}), 202
-                # If model not present, return 409 so frontend can start a background pull
-                try:
-                    res = subprocess.run(['ollama', 'list'], capture_output=True, text=True, check=False)
-                    out = (res.stdout or '') + (res.stderr or '')
-                    if resolved_model not in out:
-                        return jsonify({'ok': False, 'error': 'model_missing', 'message': 'Model not present locally'}), 409
-                except Exception:
-                    # If check failed, fall through and let rewrite_transcription handle errors
-                    pass
             if action == "preview" or not edited_text:
                 source_text = read_transcription_body(source_path)
                 edited_text, metadata = rewrite_transcription(
@@ -826,95 +816,6 @@ def create_app(output_dir: str = "transcriptions", offline: bool = False) -> Fla
         except Exception as exc:  # noqa: BLE001
             logger.exception("Failed to rewrite transcription %s", safe_name)
             return jsonify({"ok": False, "error": f"Réécriture impossible : {exc}"}), 500
-
-    @app.route('/ollama/check-model')
-    def ollama_check_model():
-        """Check whether an Ollama model is present locally and whether Ollama is installed.
-
-        Query param: model (model key)
-        Returns JSON: {ok: True, present: bool, message: str}
-        """
-        model = (request.args.get('model') or '').strip()
-        if not model:
-            return jsonify({'ok': False, 'present': False, 'message': 'model param is required'}), 400
-
-        try:
-            from shutil import which
-            if which('ollama') is None:
-                return jsonify({'ok': True, 'present': False, 'message': 'ollama_not_installed'})
-        except Exception:
-            return jsonify({'ok': True, 'present': False, 'message': 'ollama_not_installed'})
-
-        # If we have a job record, use that
-        job = app.ollama_jobs.get(model)
-        if job and job.get('status') == 'done':
-            return jsonify({'ok': True, 'present': True})
-        if job and job.get('status') == 'pulling':
-            return jsonify({'ok': True, 'present': False, 'message': 'pulling'})
-
-        try:
-            res = subprocess.run(['ollama', 'list'], capture_output=True, text=True, check=False)
-            out = (res.stdout or '') + (res.stderr or '')
-            present = model in out
-            return jsonify({'ok': True, 'present': bool(present)})
-        except Exception:
-            return jsonify({'ok': True, 'present': False, 'message': 'check_failed'})
-
-    def _pull_ollama_model_background(model: str) -> None:
-        app.ollama_jobs[model] = {'status': 'pulling', 'message': 'starting'}
-        try:
-            p = subprocess.Popen(['ollama', 'pull', model], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-            # Consume output to avoid blocking; record last line as message
-            last_line = ''
-            for line in p.stdout or []:
-                last_line = line.strip()
-                app.ollama_jobs[model]['message'] = last_line
-            rc = p.wait()
-            if rc == 0:
-                app.ollama_jobs[model]['status'] = 'done'
-                app.ollama_jobs[model]['message'] = 'completed'
-            else:
-                app.ollama_jobs[model]['status'] = 'failed'
-                app.ollama_jobs[model]['message'] = f'returncode:{rc}'
-        except Exception as exc:
-            app.ollama_jobs[model]['status'] = 'failed'
-            app.ollama_jobs[model]['message'] = str(exc)
-
-    @app.route('/ollama/pull-model', methods=['POST'])
-    def ollama_pull_model():
-        data = request.get_json(force=True, silent=True) or {}
-        model = (data.get('model') or '').strip()
-        if not model:
-            return jsonify({'ok': False, 'error': 'model is required'}), 400
-
-        from shutil import which
-        if which('ollama') is None:
-            return jsonify({'ok': False, 'error': 'ollama_not_installed'}), 400
-
-        # If already done
-        job = app.ollama_jobs.get(model)
-        if job and job.get('status') == 'done':
-            return jsonify({'ok': True, 'status': 'done'})
-        if job and job.get('status') == 'pulling':
-            return jsonify({'ok': True, 'status': 'pulling'})
-
-        # Start background pull
-        app.ollama_jobs[model] = {'status': 'queued', 'message': 'queued'}
-        try:
-            app.ollama_executor.submit(_pull_ollama_model_background, model)
-            app.ollama_jobs[model] = {'status': 'pulling', 'message': 'started'}
-            return jsonify({'ok': True, 'status': 'pulling'})
-        except Exception as exc:
-            app.ollama_jobs[model] = {'status': 'failed', 'message': str(exc)}
-            return jsonify({'ok': False, 'error': str(exc)}), 500
-
-    @app.route('/ollama/pull-status')
-    def ollama_pull_status():
-        model = (request.args.get('model') or '').strip()
-        if not model:
-            return jsonify({'ok': False, 'error': 'model is required'}), 400
-        job = app.ollama_jobs.get(model) or {'status': 'idle', 'message': ''}
-        return jsonify({'ok': True, 'status': job.get('status'), 'message': job.get('message')})
 
         edited_text = edited_text.strip()
         if not edited_text:
@@ -962,6 +863,32 @@ def create_app(output_dir: str = "transcriptions", offline: bool = False) -> Fla
                 "metadata": metadata,
             }
         )
+
+    @app.route('/ollama/check-model')
+    def ollama_check_model():
+        """Check whether an Ollama model is present locally and whether Ollama is installed."""
+        model = (request.args.get('model') or '').strip()
+        if not model:
+            return jsonify({'ok': False, 'present': False, 'message': 'model param is required'}), 400
+        return jsonify(check_ollama_model(model, app.ollama_jobs))
+
+    @app.route('/ollama/pull-model', methods=['POST'])
+    def ollama_pull_model():
+        data = request.get_json(force=True, silent=True) or {}
+        model = (data.get('model') or '').strip()
+        if not model:
+            return jsonify({'ok': False, 'error': 'model is required'}), 400
+        result = start_ollama_pull(model, app.ollama_executor, app.ollama_jobs)
+        if not result.get('ok'):
+            return jsonify(result), 400
+        return jsonify(result)
+
+    @app.route('/ollama/pull-status')
+    def ollama_pull_status():
+        model = (request.args.get('model') or '').strip()
+        if not model:
+            return jsonify({'ok': False, 'error': 'model is required'}), 400
+        return jsonify(get_ollama_pull_status(model, app.ollama_jobs))
 
     @app.route("/transcriptions/<filename>/preview")
     def transcription_preview(filename: str):

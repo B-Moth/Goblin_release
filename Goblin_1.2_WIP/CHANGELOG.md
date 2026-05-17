@@ -1,4 +1,29 @@
-# Goblin v1.1 changelog :
+# Goblin changelog
+
+## 2026-05-17 — Cleanup + local editing overhaul
+
+### UI / editor
+- Fixed the web UI startup crash that made buttons appear unresponsive.
+- Added transcription editor controls to switch between online (OpenAI) and local (Ollama/Qwen) modes.
+- Added local model selection for Qwen 7B / 14B and visible status indicators for model availability and download progress.
+- Added on-demand background model pulls with user warning before large downloads.
+- Kept the transcription review flow with preview-before-save and safe filename generation.
+
+### Installer / uninstall
+- Updated the macOS installer to install Ollama when possible.
+- Pre-pulls only the default local model during setup to keep installation lighter.
+- Updated uninstall cleanup to remove downloaded Ollama models and cached model data.
+
+### Code quality / structure
+- Extracted shared Ollama runtime helpers into `src/goblin/ollama_runtime.py` to reduce duplication.
+- Cleaned up the rewrite and model-check routes so the Flask app is easier to read and maintain.
+- Added optional local dependency support for Ollama in the build metadata.
+
+### Packaging / dependency handling
+- Kept the project runnable from source with the minimum web dependencies installed lazily.
+- Preserved the existing offline transcription stack while making local editor dependencies optional where possible.
+
+## Goblin v1.1 changelog :
 
 ## Fixes :
 - uninstall.py now correctly import sys
