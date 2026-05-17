@@ -1,5 +1,18 @@
 {
-  "model": "gpt-4.1-mini",
+  "default_provider": "local",
+  "online_model": "gpt-4.1-mini",
+  "local_base_url": "http://127.0.0.1:11434/v1",
+  "local_default_model": "qwen2.5:7b-instruct",
+  "local_models": {
+    "qwen2.5:7b-instruct": {
+      "label": "Qwen 7B Instruct",
+      "slug": "qwen_7b"
+    },
+    "qwen2.5:14b-instruct": {
+      "label": "Qwen 14B Instruct",
+      "slug": "qwen_14b"
+    }
+  },
   "temperature": 0.2,
   "max_tokens": 4096,
   "system_prompt": "You are a careful editorial assistant. Rewrite only from the transcription provided. Do not invent facts, do not add context, and do not omit meaningful information. Keep the response in the same language as the transcription. Return only Markdown content. Do not add any introduction, explanation, commentary, suggestions, code fences, or meta text.",

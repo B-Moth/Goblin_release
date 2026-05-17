@@ -109,15 +109,19 @@ The package shim in [src/goblin/version.py](src/goblin/version.py) keeps existin
 - **🪄 Smart Naming** — Optionally renames saved transcriptions with GPT-3.5-turbo (requieres API key)
 - **📝 Markdown Output** — Editable, searchable text files
 - **📁 Batch Processing** — Queue multiple files for processing
-- **✍️ Review Assistant** — Rewrites a selected transcription into a cleaned `.md` version using an online preset, while keeping the original file untouched
+- **✍️ Review Assistant** — Rewrites a selected transcription into a cleaned `.md` version with a local Qwen model by default, while keeping the original file untouched
 
-The review assistant also supports a **custom format** option: write your own formatting request in the dialog, and Goblin will apply it online while keeping the same anti-hallucination rules, the same language as the transcription, and Markdown-only output.
+The review assistant also supports a **custom format** option: write your own formatting request in the dialog, and Goblin will apply it with the same anti-hallucination rules, the same language as the transcription, and Markdown-only output.
+
+By default Goblin uses **Qwen 7B Instruct** locally through Ollama for the review assistant. If you want a larger local model, choose **Qwen 14B Instruct** in the dialog. If you prefer the old online workflow, switch the mode to **En ligne (OpenAI)** and provide an API key.
 
 ## Reviewing a transcription
 
 When a transcription is open in the viewer, click **Du nerf, insecte !** to open the rewrite dialog.
 
-- Requires an OpenAI API key; the action is disabled when no key is configured.
+- The dialog defaults to the local Qwen mode; install Ollama and pull `qwen2.5:7b-instruct` to use it right away.
+- Choose **Qwen 14B Instruct** if you want the larger local model.
+- Switch to **En ligne (OpenAI)** if you want the API-backed workflow instead.
 - Choose one of the config-driven presets: Interview, Résumé, or Documentation.
 - Or choose **Personnalisé** and type your own formatting request.
 - Click **Aperçu** first to generate a draft, then **Enregistrer** to save the exact markdown result as a new file.

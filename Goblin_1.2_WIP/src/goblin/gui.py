@@ -36,10 +36,15 @@ from goblin.offline import get_whisper_model_size
 from goblin.offline import transcribe_audio_offline, transcribe_image_offline
 from goblin.transcription_editor import (
     build_edited_transcription_filename,
+    get_editor_default_local_model,
+    get_editor_default_provider,
     get_editor_custom_mode,
     get_editor_presets,
+    get_editor_local_models,
+    get_editor_provider_options,
     load_editor_config,
     read_transcription_body,
+    resolve_editor_runtime,
     rewrite_transcription,
 )
 import json
@@ -326,6 +331,8 @@ def create_app(output_dir: str = "transcriptions", offline: bool = False) -> Fla
         audio_offline = app.config.get("OFFLINE_AUDIO", True)
         whisper_model_size = app.config.get("WHISPER_MODEL_SIZE", "base")
         smart_naming_enabled = app.config.get("SMART_NAMING_ENABLED", False)
+        editor_default_provider = get_editor_default_provider()
+        editor_default_local_model = get_editor_default_local_model()
         return render_template(
             "index.html",
             transcriptions=transcriptions,
@@ -336,6 +343,10 @@ def create_app(output_dir: str = "transcriptions", offline: bool = False) -> Fla
             audio_offline=audio_offline,
             whisper_model_size=whisper_model_size,
             smart_naming_enabled=smart_naming_enabled,
+            editor_default_provider=editor_default_provider,
+            editor_default_local_model=editor_default_local_model,
+            editor_provider_options=get_editor_provider_options(),
+            editor_local_models=get_editor_local_models(),
             editor_presets=get_editor_presets(),
             editor_custom_mode=get_editor_custom_mode(),
         )
@@ -758,15 +769,14 @@ def create_app(output_dir: str = "transcriptions", offline: bool = False) -> Fla
         if safe_name not in known:
             return jsonify({"ok": False, "error": "Fichier introuvable."}), 404
 
-        if not os.environ.get("OPENAI_API_KEY"):
-            return jsonify({"ok": False, "error": "Clé API OpenAI requise pour la réécriture en ligne."}), 403
-
         data = request.get_json(force=True, silent=True) or {}
         preset_key = (data.get("preset") or "").strip()
         if not preset_key:
             return jsonify({"ok": False, "error": "preset is required"}), 400
 
         custom_prompt = (data.get("custom_prompt") or "").strip()
+        provider = (data.get("provider") or "").strip().lower()
+        local_model = (data.get("local_model") or "").strip()
         action = (data.get("action") or "save").strip().lower()
         edited_text = (data.get("edited_text") or "").strip()
 
@@ -777,12 +787,21 @@ def create_app(output_dir: str = "transcriptions", offline: bool = False) -> Fla
 
         source_path = out_dir / safe_name
         try:
-            metadata = {"model": config.get("model", "gpt-4.1-mini"), "usage": {}}
+            resolved_provider, resolved_model = resolve_editor_runtime(provider, local_model)
+            metadata = {"provider": resolved_provider, "model": resolved_model, "usage": {}}
             if action == "preview" or not edited_text:
                 source_text = read_transcription_body(source_path)
-                edited_text, metadata = rewrite_transcription(source_text, preset_key, custom_prompt=custom_prompt)
+                edited_text, metadata = rewrite_transcription(
+                    source_text,
+                    preset_key,
+                    custom_prompt=custom_prompt,
+                    provider=resolved_provider,
+                    local_model=resolved_model,
+                )
         except AuthenticationError:
             return jsonify({"ok": False, "error": "Clé API OpenAI requise pour la réécriture en ligne."}), 403
+        except RuntimeError as exc:
+            return jsonify({"ok": False, "error": str(exc)}), 503
         except ValueError as exc:
             return jsonify({"ok": False, "error": str(exc)}), 400
         except Exception as exc:  # noqa: BLE001

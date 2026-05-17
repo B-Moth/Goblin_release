@@ -676,7 +676,23 @@
     <div id="transcription-editor-modal" class="modal-backdrop" aria-hidden="true">
       <div class="modal" role="dialog" aria-modal="true" aria-labelledby="transcription-editor-title">
         <h3 id="transcription-editor-title">Du nerf, insecte !</h3>
-        <p>Choisissez un traitement en ligne à appliquer à la transcription ouverte. Le texte d'origine restera intact.</p>
+        <p>Choisissez un traitement local Qwen par défaut, ou basculez en ligne si vous avez une clé API. Le texte d'origine restera intact.</p>
+        <div class="row" style="flex-direction:column;align-items:stretch;">
+          <label for="editor-provider-select" style="font-weight:700;color:#1f2937;">Mode</label>
+          <select id="editor-provider-select" class="editor-select">
+            {% for provider in editor_provider_options %}
+            <option value="{{ provider.key }}" {% if provider.key == editor_default_provider %}selected{% endif %}>{{ provider.label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="row" id="local-model-row" style="flex-direction:column;align-items:stretch;">
+          <label for="editor-local-model-select" style="font-weight:700;color:#1f2937;">Modèle local</label>
+          <select id="editor-local-model-select" class="editor-select">
+            {% for model in editor_local_models %}
+            <option value="{{ model.key }}" {% if model.key == editor_default_local_model %}selected{% endif %}>{{ model.label }}</option>
+            {% endfor %}
+          </select>
+        </div>
         <div class="row" style="flex-direction:column;align-items:stretch;">
           <label for="editor-preset-select" style="font-weight:700;color:#1f2937;">Préset</label>
           <select id="editor-preset-select" class="editor-select">
@@ -801,6 +817,8 @@
   let currentTranscriptionName = null;
   let currentTranscriptionRewritePreview = '';
   let currentTranscriptionRewriteSuggestedName = '';
+  let editorProvider = '{{ editor_default_provider }}';
+  let editorLocalModel = '{{ editor_default_local_model }}';
 
   function resetTranscriptionRewritePreview() {
     currentTranscriptionRewritePreview = '';
@@ -835,17 +853,37 @@
     const launchButton = document.getElementById('rewrite-transcription-button');
     const submitButton = document.getElementById('rewrite-transcription-submit');
     const previewButton = document.getElementById('rewrite-transcription-preview');
-    const enabled = apiKeySet && !!currentTranscriptionName;
+    const providerRequiresApi = editorProvider === 'openai' && !apiKeySet;
+    const enabled = !!currentTranscriptionName;
     if (launchButton) {
       launchButton.disabled = !enabled;
-      launchButton.title = apiKeySet ? (currentTranscriptionName ? '' : 'Sélectionnez une transcription') : 'Clé API requise pour cette action';
+      launchButton.title = currentTranscriptionName ? '' : 'Sélectionnez une transcription';
     }
     if (submitButton) {
-      submitButton.disabled = !enabled;
+      submitButton.disabled = !enabled || providerRequiresApi || !currentTranscriptionRewritePreview;
     }
     if (previewButton) {
-      previewButton.disabled = !enabled;
+      previewButton.disabled = !enabled || providerRequiresApi;
     }
+  }
+
+  function syncTranscriptionEditorModeState() {
+    const providerSelect = document.getElementById('editor-provider-select');
+    const localModelRow = document.getElementById('local-model-row');
+    const localModelSelect = document.getElementById('editor-local-model-select');
+    if (providerSelect) {
+      editorProvider = providerSelect.value || editorProvider;
+    }
+    if (localModelSelect) {
+      editorLocalModel = localModelSelect.value || editorLocalModel;
+    }
+    if (localModelRow) {
+      localModelRow.style.display = editorProvider === 'local' ? 'flex' : 'none';
+    }
+    if (localModelSelect) {
+      localModelSelect.disabled = editorProvider !== 'local';
+    }
+    syncTranscriptionEditorState();
   }
 
   function updateCustomFormatUI() {
@@ -1023,15 +1061,12 @@
   }
 
   function openTranscriptionEditorModal() {
-    if (!apiKeySet) {
-      addMessage('Clé API requise pour réécrire une transcription.', 'error');
-      return;
-    }
     if (!currentTranscriptionName) {
       addMessage('Sélectionnez une transcription à réécrire.', 'warning');
       return;
     }
     syncTranscriptionEditorState();
+    syncTranscriptionEditorModeState();
     updateCustomFormatUI();
     document.getElementById('editor-preview-output').value = currentTranscriptionRewritePreview || '';
     const modal = document.getElementById('transcription-editor-modal');
@@ -1057,13 +1092,31 @@
     editorPresetSelect.addEventListener('change', updateCustomFormatUI);
     editorPresetSelect.addEventListener('change', resetTranscriptionRewritePreview);
   }
+  const editorProviderSelect = document.getElementById('editor-provider-select');
+  if (editorProviderSelect) {
+    editorProviderSelect.value = editorProvider;
+    editorProviderSelect.addEventListener('change', () => {
+      resetTranscriptionRewritePreview();
+      syncTranscriptionEditorModeState();
+    });
+  }
+  const editorLocalModelSelect = document.getElementById('editor-local-model-select');
+  if (editorLocalModelSelect) {
+    editorLocalModelSelect.value = editorLocalModel;
+    editorLocalModelSelect.addEventListener('change', () => {
+      resetTranscriptionRewritePreview();
+      syncTranscriptionEditorModeState();
+    });
+  }
   const customFormatInput = document.getElementById('custom-format-input');
   if (customFormatInput) {
     customFormatInput.addEventListener('input', resetTranscriptionRewritePreview);
   }
 
   async function previewTranscriptionRewrite() {
-    if (!apiKeySet) {
+    const provider = document.getElementById('editor-provider-select').value;
+    const localModel = document.getElementById('editor-local-model-select').value;
+    if (provider === 'openai' && !apiKeySet) {
       addMessage('Clé API requise pour réécrire une transcription.', 'error');
       return;
     }
@@ -1083,7 +1136,7 @@
       const response = await fetch('/transcriptions/' + encodeURIComponent(currentTranscriptionName) + '/rewrite', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({preset, custom_prompt: customPrompt, action: 'preview'})
+        body: JSON.stringify({preset, custom_prompt: customPrompt, provider, local_model: localModel, action: 'preview'})
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok || !data.ok) {
@@ -1105,7 +1158,9 @@
   }
 
   async function submitTranscriptionRewrite() {
-    if (!apiKeySet) {
+    const provider = document.getElementById('editor-provider-select').value;
+    const localModel = document.getElementById('editor-local-model-select').value;
+    if (provider === 'openai' && !apiKeySet) {
       addMessage('Clé API requise pour réécrire une transcription.', 'error');
       return;
     }
@@ -1130,6 +1185,8 @@
         body: JSON.stringify({
           preset,
           custom_prompt: customPrompt,
+            provider,
+            local_model: localModel,
           action: 'save',
           edited_text: currentTranscriptionRewritePreview,
         })
@@ -1211,6 +1268,7 @@
   syncApiKeyModalState();
   updateHandwritingUI();
   updateAudioUI();
+  syncTranscriptionEditorModeState();
 
   // Persisted queue from previous session (server-side)
   let persistedQueueLog = [];
