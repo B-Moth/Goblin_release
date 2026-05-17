@@ -207,6 +207,44 @@ def _resolve_editor_runtime(provider: str | None, local_model: str | None) -> tu
     return resolved_provider, model
 
 
+def _ensure_ollama_model_available(model: str) -> None:
+    """Ensure an Ollama model is present locally; pull it on first use if necessary.
+
+    Raises RuntimeError with a user-friendly message when Ollama is missing or pull fails.
+    """
+    try:
+        from shutil import which
+        import subprocess
+    except Exception:
+        raise RuntimeError(
+            "Le mode local nécessite Ollama (https://ollama.com). Installez Ollama et réessayez."
+        )
+
+    if which("ollama") is None:
+        raise RuntimeError(
+            "Le mode local nécessite Ollama (outil système) — installez-le (Homebrew: `brew install ollama`) et relancez.")
+
+    # Check if model already exists
+    try:
+        res = subprocess.run(["ollama", "list"], capture_output=True, text=True, check=False)
+        stdout = (res.stdout or "") + (res.stderr or "")
+        if model in stdout:
+            return
+    except Exception:
+        # If checking fails, proceed to attempt pull
+        stdout = ""
+
+    # Pull the model (this may be large and take time)
+    try:
+        print(f"ℹ Pulling Ollama model '{model}' (first use). This may take a while...")
+        subprocess.check_call(["ollama", "pull", model])
+        print(f"✓ Ollama model '{model}' pulled successfully.")
+    except subprocess.CalledProcessError as exc:
+        raise RuntimeError(
+            f"Échec du téléchargement du modèle local '{model}'. Vérifiez votre connexion ou installez le modèle manuellement avec 'ollama pull {model}'."
+        ) from exc
+
+
 def resolve_editor_runtime(provider: str | None, local_model: str | None) -> tuple[str, str]:
     """Public wrapper for the normalized editor provider/model pair."""
     return _resolve_editor_runtime(provider, local_model)
@@ -286,6 +324,8 @@ def rewrite_transcription(
             raise AuthenticationError("OPENAI_API_KEY is required for transcription editing")
         client = OpenAI()
     else:
+        # Ensure Ollama model is available (lazy pull on first use)
+        _ensure_ollama_model_available(resolved_model)
         client = OpenAI(
             base_url=str(config.get("local_base_url", "http://127.0.0.1:11434/v1")),
             api_key="ollama",

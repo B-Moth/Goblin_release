@@ -168,6 +168,34 @@ def _purge_model_cache() -> None:
         print("No model cache found to remove.")
 
 
+def _purge_ollama_models() -> None:
+    """Remove Ollama-pulled models listed in the editor config (if Ollama is present)."""
+    try:
+        from shutil import which
+        from goblin.transcription_editor import load_editor_config
+    except Exception:
+        print("Skipping Ollama model purge: cannot import editor config.")
+        return
+
+    if which("ollama") is None:
+        print("Ollama not found on PATH; skipping Ollama model removal.")
+        return
+
+    config = load_editor_config()
+    local_models = config.get("local_models", {})
+    if not isinstance(local_models, dict) or not local_models:
+        print("No local models configured; skipping Ollama model removal.")
+        return
+
+    for model_key in list(local_models.keys()):
+        try:
+            print(f"Attempting to remove Ollama model: {model_key} ...")
+            subprocess.run(["ollama", "rm", model_key], check=False)
+            print(f"✓ Requested removal of Ollama model: {model_key}")
+        except Exception:
+            print(f"! Failed to remove Ollama model: {model_key} (you may need to remove it manually)")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Uninstall Goblin browser UI and purge generated content.")
     parser.add_argument(
@@ -194,6 +222,8 @@ def main() -> None:
     _purge_build_artifacts()
     _purge_metadata_files()
     _purge_model_cache()
+    # Attempt to remove any Ollama-downloaded local models referenced by the editor config
+    _purge_ollama_models()
     print("✓ Uninstall complete. Transcriptions were left untouched.")
 
 
