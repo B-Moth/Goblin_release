@@ -794,7 +794,19 @@
     <div id="viewer">
       <div class="viewer-header">
         <h2 id="viewer-title" class="viewer-title">Sélectionnez une transcription dans la liste</h2>
-        <button type="button" class="editor-launch-button" id="rewrite-transcription-button" onclick="openTranscriptionEditorModal()" disabled>Du nerf, insecte !</button>
+        <div style="display:flex;align-items:center;gap:0.6rem;">
+          <select id="viewer-editor-provider-select" class="editor-select" style="width:auto;min-width:160px;">
+            {% for provider in editor_provider_options %}
+            <option value="{{ provider.key }}" {% if provider.key == editor_default_provider %}selected{% endif %}>{{ provider.label }}</option>
+            {% endfor %}
+          </select>
+          <select id="viewer-editor-local-model-select" class="editor-select" style="width:auto;min-width:160px;">
+            {% for model in editor_local_models %}
+            <option value="{{ model.key }}" {% if model.key == editor_default_local_model %}selected{% endif %}>{{ model.label }}</option>
+            {% endfor %}
+          </select>
+          <button type="button" class="editor-launch-button" id="rewrite-transcription-button" onclick="openTranscriptionEditorModal()" disabled>Du nerf, insecte !</button>
+        </div>
       </div>
       <div id="viewer-content">
         <p id="viewer-placeholder">
@@ -1106,6 +1118,44 @@
     editorLocalModelSelect.addEventListener('change', () => {
       resetTranscriptionRewritePreview();
       syncTranscriptionEditorModeState();
+    });
+  }
+
+  // Viewer-level provider/model quick controls (mirror modal selections)
+  const viewerEditorProviderSelect = document.getElementById('viewer-editor-provider-select');
+  const viewerEditorLocalModelSelect = document.getElementById('viewer-editor-local-model-select');
+  if (viewerEditorProviderSelect) {
+    // Seed from server value
+    viewerEditorProviderSelect.value = editorProvider;
+    viewerEditorProviderSelect.addEventListener('change', (e) => {
+      const val = e.target.value;
+      editorProvider = val || editorProvider;
+      // Mirror into modal select if present
+      if (editorProviderSelect) editorProviderSelect.value = editorProvider;
+      resetTranscriptionRewritePreview();
+      syncTranscriptionEditorModeState();
+    });
+  }
+  if (viewerEditorLocalModelSelect) {
+    viewerEditorLocalModelSelect.value = editorLocalModel;
+    viewerEditorLocalModelSelect.addEventListener('change', (e) => {
+      const val = e.target.value;
+      editorLocalModel = val || editorLocalModel;
+      if (editorLocalModelSelect) editorLocalModelSelect.value = editorLocalModel;
+      resetTranscriptionRewritePreview();
+      syncTranscriptionEditorModeState();
+    });
+  }
+
+  // Keep modal and viewer selects in sync when modal controls change
+  if (editorProviderSelect && viewerEditorProviderSelect) {
+    editorProviderSelect.addEventListener('change', (e) => {
+      viewerEditorProviderSelect.value = editorProviderSelect.value;
+    });
+  }
+  if (editorLocalModelSelect && viewerEditorLocalModelSelect) {
+    editorLocalModelSelect.addEventListener('change', (e) => {
+      viewerEditorLocalModelSelect.value = editorLocalModelSelect.value;
     });
   }
   const customFormatInput = document.getElementById('custom-format-input');
