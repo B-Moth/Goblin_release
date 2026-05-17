@@ -16,6 +16,7 @@ import platform
 import shutil
 import stat
 import sys
+import subprocess
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -108,6 +109,28 @@ def _install_macos(exe: Path) -> None:
     print(f"✓ {APP_BASENAME}.app installed to {dest}")
     print(f"✓ Launcher scripts in {launcher_dir}")
     print(f"  Double-click the launcher or drag {APP_BASENAME}.app to the Dock.")
+
+    # Try to ensure Ollama is available for local-model editing.
+    try:
+        from shutil import which
+        if which("ollama") is None:
+            print("ℹ Ollama not found on PATH — attempting to install via Homebrew...")
+            if which("brew"):
+                try:
+                    subprocess.check_call(["brew", "install", "ollama"])  # may require sudo or user interaction
+                    print("✓ Ollama installed via Homebrew.")
+                except Exception:
+                    print(
+                        "✗ Failed to install Ollama via Homebrew. Please install Ollama manually: https://ollama.com"
+                    )
+            else:
+                print(
+                    "⚠ Homebrew not found. Install Homebrew (https://brew.sh) and then Ollama (https://ollama.com)."
+                )
+        else:
+            print("✓ Ollama detected on PATH.")
+    except Exception:
+        print("⚠ Could not check or install Ollama automatically. See https://ollama.com for manual installation.")
 
 
 def _install_linux(exe: Path) -> None:
