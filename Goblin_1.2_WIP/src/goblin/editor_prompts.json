@@ -1,0 +1,28 @@
+{
+  "model": "gpt-4.1-mini",
+  "temperature": 0.2,
+  "max_tokens": 4096,
+  "system_prompt": "You are a careful editorial assistant. Rewrite only from the transcription provided. Do not invent facts, do not add context, and do not omit meaningful information. Keep the response in the same language as the transcription. Return only Markdown content. Do not add any introduction, explanation, commentary, suggestions, code fences, or meta text.",
+  "presets": {
+    "interview": {
+      "label": "Interview",
+      "slug": "interview",
+      "prompt": "Rewrite the transcription as an interview in the style of a magazine or newspaper interview. Do not correct spelling, grammar, punctuation, or wording. Do not add, remove, or omit anything. Preserve all errors and repetitions exactly as they appear. Only reformat the transcription as an interview."
+    },
+    "resume": {
+      "label": "Résumé",
+      "slug": "resume",
+      "prompt": "Summarize the transcription by extracting the relevant information and writing a relatively short and clear text. Keep only the facts present in the transcription. Do not invent anything. Do not add recommendations or commentary."
+    },
+    "documentation": {
+      "label": "Documentation",
+      "slug": "documentation",
+      "prompt": "Rewrite the transcription as a structured and clear document. Present the information like technical documentation, a report, or a field note. Organize the content with useful Markdown headings and sections. Keep only the information that is present in the transcription. Do not invent or infer anything."
+    },
+    "custom": {
+      "label": "Personnalisé",
+      "slug": "custom",
+      "prompt": "Apply the user's custom formatting instructions exactly. Keep only information present in the transcription. Do not invent facts, do not add context, and do not omit meaningful information. Return only Markdown content, with no introduction, no explanation, no suggestions, and no meta text. The output must remain in the same language as the transcription."
+    }
+  }
+}

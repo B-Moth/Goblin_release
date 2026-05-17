@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "goblin"
+dynamic = ["version"]
+description = "Le Gobelin – outil de transcription pour le journal Les Feuillets"
+readme = "../docs/README.md"
+requires-python = ">=3.9,<3.13"
+dependencies = [
+    "openai>=1.0.0",
+    "Pillow>=10.0.0",
+    "mutagen>=1.47.0",
+    "click>=8.0.0",
+    "flask>=3.0.0",
+    "markdown>=3.5.0",
+    "send2trash>=1.8.0",
+    "faster-whisper>=1.0.0",
+    "paddleocr>=2.8.0",
+    "paddlepaddle>=2.6.0",
+    "transformers>=4.42.0",
+    "torch>=2.2.0",
+]
+
+[project.scripts]
+goblin = "goblin.main:main"
+goblin-sync-version = "goblin.version_sync:main"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-mock>=3.0.0",
+    "pyinstaller>=6.0.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["../src"]
+include = ["goblin*"]
+
+[tool.setuptools]
+py-modules = ["version"]
+
+[tool.setuptools.dynamic]
+version = {attr = "goblin.version.VERSION"}
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
