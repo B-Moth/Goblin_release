@@ -34,6 +34,11 @@ dev = [
     "pyinstaller>=6.0.0",
 ]
 
+local = [
+    # Optional: Ollama CLI/python integration for local Qwen inference
+    "ollama>=0.1.0"
+]
+
 [tool.setuptools.packages.find]
 where = ["../src"]
 include = ["goblin*"]
