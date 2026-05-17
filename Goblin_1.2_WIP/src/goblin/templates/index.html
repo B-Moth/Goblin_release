@@ -1170,6 +1170,24 @@
       addMessage('Clé API requise pour réécrire une transcription.', 'error');
       return;
     }
+    // If local provider, check whether the Ollama model is present; warn user before pulling
+    if (provider === 'local') {
+      try {
+        const check = await fetch('/ollama/check-model?model=' + encodeURIComponent(localModel));
+        const info = await check.json().catch(() => ({}));
+        if (check.ok && info && info.present === false) {
+          if (info.message === 'ollama_not_installed') {
+            addMessage("Le runtime local (Ollama) n'est pas installé. Installez Ollama ou passez en mode en ligne.", 'error');
+            return;
+          }
+          const confirmPull = confirm('Le modèle local sélectionné n\'est pas présent et sera téléchargé (plusieurs centaines de MB). Voulez-vous continuer ?');
+          if (!confirmPull) return;
+        }
+      } catch (err) {
+        // If we cannot check, warn but allow proceeding (server-side will handle failures)
+        console.warn('Model check failed:', err);
+      }
+    }
     if (!currentTranscriptionName) {
       addMessage('Sélectionnez une transcription à réécrire.', 'warning');
       return;
@@ -1213,6 +1231,22 @@
     if (provider === 'openai' && !apiKeySet) {
       addMessage('Clé API requise pour réécrire une transcription.', 'error');
       return;
+    }
+    if (provider === 'local') {
+      try {
+        const check = await fetch('/ollama/check-model?model=' + encodeURIComponent(localModel));
+        const info = await check.json().catch(() => ({}));
+        if (check.ok && info && info.present === false) {
+          if (info.message === 'ollama_not_installed') {
+            addMessage("Le runtime local (Ollama) n'est pas installé. Installez Ollama ou passez en mode en ligne.", 'error');
+            return;
+          }
+          const confirmPull = confirm('Le modèle local sélectionné n\'est pas présent et sera téléchargé (plusieurs centaines de MB). Voulez-vous continuer ?');
+          if (!confirmPull) return;
+        }
+      } catch (err) {
+        console.warn('Model check failed:', err);
+      }
     }
     if (!currentTranscriptionName) {
       addMessage('Sélectionnez une transcription à réécrire.', 'warning');

@@ -132,6 +132,37 @@ def _install_macos(exe: Path) -> None:
     except Exception:
         print("⚠ Could not check or install Ollama automatically. See https://ollama.com for manual installation.")
 
+    # Pre-pull default local model(s) configured for the editor (if Ollama available)
+    try:
+        from shutil import which
+        if which("ollama"):
+            try:
+                # Import editor config from source tree
+                sys.path.insert(0, str(SRC_DIR))
+                from goblin.transcription_editor import load_editor_config
+                cfg = load_editor_config()
+                preload = cfg.get("preload_local_models") or []
+                # Always include configured default model
+                default_model = cfg.get("local_default_model")
+                if default_model and default_model not in preload:
+                    preload = [default_model] + list(preload)
+
+                for m in preload:
+                    if not m:
+                        continue
+                    try:
+                        print(f"ℹ Pre-pulling Ollama model: {m} (installer)")
+                        subprocess.check_call(["ollama", "pull", m])
+                        print(f"✓ Pre-pulled: {m}")
+                    except Exception:
+                        print(f"! Failed to pre-pull model {m}; continue.")
+            except Exception:
+                print("! Could not preload Ollama models (config load failed)")
+        else:
+            print("ℹ Skipping model pre-pull: Ollama not available.")
+    except Exception:
+        print("! Pre-pull step skipped due to unexpected error.")
+
 
 def _install_linux(exe: Path) -> None:
     """Install a browser .desktop entry and symlink the binary."""

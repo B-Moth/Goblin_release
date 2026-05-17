@@ -808,6 +808,32 @@ def create_app(output_dir: str = "transcriptions", offline: bool = False) -> Fla
             logger.exception("Failed to rewrite transcription %s", safe_name)
             return jsonify({"ok": False, "error": f"Réécriture impossible : {exc}"}), 500
 
+    @app.route('/ollama/check-model')
+    def ollama_check_model():
+        """Check whether an Ollama model is present locally and whether Ollama is installed.
+
+        Query param: model (model key)
+        Returns JSON: {ok: True, present: bool, message: str}
+        """
+        model = (request.args.get('model') or '').strip()
+        if not model:
+            return jsonify({'ok': False, 'present': False, 'message': 'model param is required'}), 400
+
+        try:
+            from shutil import which
+            if which('ollama') is None:
+                return jsonify({'ok': True, 'present': False, 'message': 'ollama_not_installed'})
+        except Exception:
+            return jsonify({'ok': True, 'present': False, 'message': 'ollama_not_installed'})
+
+        try:
+            res = subprocess.run(['ollama', 'list'], capture_output=True, text=True, check=False)
+            out = (res.stdout or '') + (res.stderr or '')
+            present = model in out
+            return jsonify({'ok': True, 'present': bool(present)})
+        except Exception:
+            return jsonify({'ok': True, 'present': False, 'message': 'check_failed'})
+
         edited_text = edited_text.strip()
         if not edited_text:
             return jsonify({"ok": False, "error": "Réponse vide de l'IA."}), 502
