@@ -897,7 +897,45 @@
     if (localModelSelect) {
       localModelSelect.disabled = editorProvider !== 'local';
     }
+    refreshLocalModelStatus().catch(err => console.warn('Failed to refresh local model status:', err));
     syncTranscriptionEditorState();
+  }
+
+  function setLocalModelStatus(text, kind) {
+    const editorStatus = document.getElementById('editor-local-model-status');
+    const viewerStatus = document.getElementById('viewer-local-model-status');
+    [editorStatus, viewerStatus].forEach(el => {
+      if (!el) return;
+      el.textContent = text;
+      el.dataset.kind = kind || '';
+    });
+  }
+
+  async function refreshLocalModelStatus() {
+    const providerSelect = document.getElementById('editor-provider-select');
+    const localModelSelect = document.getElementById('editor-local-model-select');
+    if (!providerSelect || !localModelSelect) return;
+    const provider = providerSelect.value || editorProvider;
+    const localModel = localModelSelect.value || editorLocalModel;
+    if (provider !== 'local') {
+      setLocalModelStatus('État : mode en ligne', 'info');
+      return;
+    }
+    try {
+      const res = await fetch('/ollama/check-model?model=' + encodeURIComponent(localModel));
+      const data = await res.json().catch(() => ({}));
+      if (data && data.message === 'ollama_not_installed') {
+        setLocalModelStatus('État : Ollama non installé', 'error');
+      } else if (data && data.message === 'pulling') {
+        setLocalModelStatus('État : téléchargement en cours', 'warning');
+      } else if (data && data.present) {
+        setLocalModelStatus('État : modèle disponible', 'success');
+      } else {
+        setLocalModelStatus('État : modèle à télécharger', 'warning');
+      }
+    } catch (err) {
+      setLocalModelStatus('État : vérification indisponible', 'warning');
+    }
   }
 
   function updateCustomFormatUI() {
@@ -1195,21 +1233,19 @@
             return;
           }
           addMessage('Téléchargement du modèle démarré — attente de la fin...', 'info');
-          // Update status indicator
-          const statusEl = document.getElementById('editor-local-model-status');
-          if (statusEl) statusEl.textContent = 'État : téléchargement en cours...';
+          setLocalModelStatus('État : téléchargement en cours', 'warning');
           // Poll for completion
           const poll = setInterval(async () => {
             const s = await fetch('/ollama/pull-status?model=' + encodeURIComponent(localModel)).then(r => r.json().catch(() => ({})));
             if (s && s.status === 'done') {
               clearInterval(poll);
-              if (statusEl) statusEl.textContent = 'État : prêt';
+              setLocalModelStatus('État : modèle disponible', 'success');
               addMessage('Modèle téléchargé — génération de l\'aperçu...', 'info');
               // Retry preview once model is ready
               previewTranscriptionRewrite();
             } else if (s && s.status === 'failed') {
               clearInterval(poll);
-              if (statusEl) statusEl.textContent = 'État : échec du téléchargement';
+              setLocalModelStatus('État : échec du téléchargement', 'error');
               addMessage('Le téléchargement du modèle a échoué : ' + (s.message || ''), 'error');
             }
           }, 2500);
@@ -1273,33 +1309,7 @@
             addMessage("Le runtime local (Ollama) n'est pas installé. Installez Ollama ou passez en mode en ligne.", 'error');
             return;
           }
-          const confirmPull = confirm('Le modèle local sélectionné n\'est pas présent et sera téléchargé (plusieurs centaines de MB). Voulez-vous continuer ?');
-          if (!confirmPull) return;
-
-          const start = await fetch('/ollama/pull-model', {
-            method: 'POST', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({model: localModel})
-          }).then(r => r.json().catch(() => ({})));
-          if (!start.ok) {
-            addMessage('Impossible de démarrer le téléchargement du modèle local: ' + (start.error || 'erreur'), 'error');
-            return;
-          }
-          addMessage('Téléchargement du modèle démarré — attente de la fin...', 'info');
-          const statusEl = document.getElementById('editor-local-model-status');
-          if (statusEl) statusEl.textContent = 'État : téléchargement en cours...';
-          const poll = setInterval(async () => {
-            const s = await fetch('/ollama/pull-status?model=' + encodeURIComponent(localModel)).then(r => r.json().catch(() => ({})));
-            if (s && s.status === 'done') {
-              clearInterval(poll);
-              if (statusEl) statusEl.textContent = 'État : prêt';
-              addMessage('Modèle téléchargé — enregistrement en cours...', 'info');
-              submitTranscriptionRewrite();
-            } else if (s && s.status === 'failed') {
-              clearInterval(poll);
-              if (statusEl) statusEl.textContent = 'État : échec du téléchargement';
-              addMessage('Le téléchargement du modèle a échoué : ' + (s.message || ''), 'error');
-            }
-          }, 2500);
+          addMessage('Le modèle local n\'est pas encore prêt. Lancez un Aperçu pour déclencher le téléchargement, puis réessayez l\'enregistrement.', 'warning');
           return;
         }
       } catch (err) {
