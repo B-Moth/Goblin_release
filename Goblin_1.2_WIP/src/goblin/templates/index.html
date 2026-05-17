@@ -692,6 +692,7 @@
             <option value="{{ model.key }}" {% if model.key == editor_default_local_model %}selected{% endif %}>{{ model.label }}</option>
             {% endfor %}
           </select>
+          <div style="margin-top:6px;font-size:0.85rem;color:#6b7280;" id="editor-local-model-status">État : inconnu</div>
         </div>
         <div class="row" style="flex-direction:column;align-items:stretch;">
           <label for="editor-preset-select" style="font-weight:700;color:#1f2937;">Préset</label>
@@ -805,6 +806,7 @@
             <option value="{{ model.key }}" {% if model.key == editor_default_local_model %}selected{% endif %}>{{ model.label }}</option>
             {% endfor %}
           </select>
+          <div style="font-size:0.8rem;color:#6b7280;" id="viewer-local-model-status">État : inconnu</div>
           <button type="button" class="editor-launch-button" id="rewrite-transcription-button" onclick="openTranscriptionEditorModal()" disabled>Du nerf, insecte !</button>
         </div>
       </div>
@@ -1182,6 +1184,36 @@
           }
           const confirmPull = confirm('Le modèle local sélectionné n\'est pas présent et sera téléchargé (plusieurs centaines de MB). Voulez-vous continuer ?');
           if (!confirmPull) return;
+
+          // Start background pull and poll until ready, then continue to preview
+          const start = await fetch('/ollama/pull-model', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({model: localModel})
+          }).then(r => r.json().catch(() => ({})));
+          if (!start.ok) {
+            addMessage('Impossible de démarrer le téléchargement du modèle local: ' + (start.error || 'erreur'), 'error');
+            return;
+          }
+          addMessage('Téléchargement du modèle démarré — attente de la fin...', 'info');
+          // Update status indicator
+          const statusEl = document.getElementById('editor-local-model-status');
+          if (statusEl) statusEl.textContent = 'État : téléchargement en cours...';
+          // Poll for completion
+          const poll = setInterval(async () => {
+            const s = await fetch('/ollama/pull-status?model=' + encodeURIComponent(localModel)).then(r => r.json().catch(() => ({})));
+            if (s && s.status === 'done') {
+              clearInterval(poll);
+              if (statusEl) statusEl.textContent = 'État : prêt';
+              addMessage('Modèle téléchargé — génération de l\'aperçu...', 'info');
+              // Retry preview once model is ready
+              previewTranscriptionRewrite();
+            } else if (s && s.status === 'failed') {
+              clearInterval(poll);
+              if (statusEl) statusEl.textContent = 'État : échec du téléchargement';
+              addMessage('Le téléchargement du modèle a échoué : ' + (s.message || ''), 'error');
+            }
+          }, 2500);
+          return;
         }
       } catch (err) {
         // If we cannot check, warn but allow proceeding (server-side will handle failures)
@@ -1243,6 +1275,32 @@
           }
           const confirmPull = confirm('Le modèle local sélectionné n\'est pas présent et sera téléchargé (plusieurs centaines de MB). Voulez-vous continuer ?');
           if (!confirmPull) return;
+
+          const start = await fetch('/ollama/pull-model', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({model: localModel})
+          }).then(r => r.json().catch(() => ({})));
+          if (!start.ok) {
+            addMessage('Impossible de démarrer le téléchargement du modèle local: ' + (start.error || 'erreur'), 'error');
+            return;
+          }
+          addMessage('Téléchargement du modèle démarré — attente de la fin...', 'info');
+          const statusEl = document.getElementById('editor-local-model-status');
+          if (statusEl) statusEl.textContent = 'État : téléchargement en cours...';
+          const poll = setInterval(async () => {
+            const s = await fetch('/ollama/pull-status?model=' + encodeURIComponent(localModel)).then(r => r.json().catch(() => ({})));
+            if (s && s.status === 'done') {
+              clearInterval(poll);
+              if (statusEl) statusEl.textContent = 'État : prêt';
+              addMessage('Modèle téléchargé — enregistrement en cours...', 'info');
+              submitTranscriptionRewrite();
+            } else if (s && s.status === 'failed') {
+              clearInterval(poll);
+              if (statusEl) statusEl.textContent = 'État : échec du téléchargement';
+              addMessage('Le téléchargement du modèle a échoué : ' + (s.message || ''), 'error');
+            }
+          }, 2500);
+          return;
         }
       } catch (err) {
         console.warn('Model check failed:', err);
