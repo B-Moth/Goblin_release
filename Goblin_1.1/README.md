@@ -1,7 +1,7 @@
 Built with ❤️ for *Les Feuillets* by Lucas
 
 
-# 🧙 Goblin 1.2_WIP – Getting Started
+# 🧙 Goblin 1.1 – Getting Started
 
 Goblin transcribes audio and converts handwritten images to editable Markdown files.
 
@@ -9,9 +9,9 @@ Goblin transcribes audio and converts handwritten images to editable Markdown fi
 
 ### Already Have the Executable? (see dist folder if existing) 
 
-**Windows:** Double-click `dist/Goblin_1.2_WIP_WIP_WIP_WIP_WIP_WIP_WIP.exe`  
-**macOS:** Open `dist/Goblin_1.2_WIP_WIP_WIP_WIP_WIP_WIP_WIP.app`  
-**Linux:** Run `chmod +x dist/Goblin_1.2_WIP_WIP_WIP_WIP_WIP_WIP_WIP && ./dist/Goblin_1.2_WIP_WIP_WIP_WIP_WIP_WIP_WIP`
+**Windows:** Double-click `dist/Goblin_1.1_WIP_WIP_WIP_WIP_WIP_WIP_WIP.exe`  
+**macOS:** Open `dist/Goblin_1.1_WIP_WIP_WIP_WIP_WIP_WIP_WIP.app`  
+**Linux:** Run `chmod +x dist/Goblin_1.1_WIP_WIP_WIP_WIP_WIP_WIP_WIP && ./dist/Goblin_1.1_WIP_WIP_WIP_WIP_WIP_WIP_WIP`
 
 ### No Executable? Build from Source
 
@@ -66,18 +66,6 @@ pip install -e build
 ```
 
 ---
-
----
-
-## 🔁 Update Version
-
-When you want to bump the release name shown in the README, installer output, and generated filenames:
-
-1. Update the version constant in [version.py](version.py).
-2. Run `python build/sync_version.py` to refresh the README and docs.
-3. Rebuild with `python build/installers/build.py` if you want fresh release artifacts.
-
-The package shim in [src/goblin/version.py](src/goblin/version.py) keeps existing imports working.
 
 ---
 
@@ -168,9 +156,9 @@ This leaves your transcriptions untouched and empty the models cached in Hugging
 | Issue | Solution |
 |-------|----------|
 | **Python not found** | Install Python 3.11 or 3.12 from python.org and use `py -3.11` or `py -3.12` |
-| **Permission denied** | Run: `chmod +x Goblin_1.2_WIP_WIP_WIP_WIP_WIP_WIP_WIP` (Linux/macOS) |
+| **Permission denied** | Run: `chmod +x Goblin_1.1_WIP_WIP_WIP_WIP_WIP_WIP_WIP` (Linux/macOS) |
 | **"Executable not found"** | Run `python build/installers/build.py` first |
-| **macOS "App is damaged"** | Run: `xattr -d com.apple.quarantine /Applications/Goblin_1.2_WIP_WIP_WIP_WIP_WIP_WIP_WIP.app` |
+| **macOS "App is damaged"** | Run: `xattr -d com.apple.quarantine /Applications/Goblin_1.1_WIP_WIP_WIP_WIP_WIP_WIP_WIP.app` |
 | **Missing dependencies** | Run: `pip install -r build/REQUIREMENTS.txt` |
 | **Slow first run** | Normal – offline mode downloads models (~2 GB) on first use |
 
@@ -206,7 +194,17 @@ If Goblin appears to be already running or the app opens twice, use the helper s
 
 This script attempts to stop processes whose command line contains `Goblin` and removes the temporary PID file used by the single-instance guard.
 
+## 🔁 Update Version
 
+When you want to bump the release name shown in the README, installer output, and generated filenames:
+
+1. Update the version constant in [version.py](version.py).
+2. Run `python build/sync_version.py` to refresh the README and docs.
+3. Rebuild with `python build/installers/build.py` if you want fresh release artifacts.
+
+The package shim in [src/goblin/version.py](src/goblin/version.py) keeps existing imports working.
+
+---
 
 
 ## License
