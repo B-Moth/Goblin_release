@@ -1000,17 +1000,19 @@ def create_app(output_dir: str = "transcriptions", offline: bool = False) -> Fla
     @app.route("/shutdown", methods=["POST"])
     def shutdown():
         """Gracefully shut down the server."""
-        # Capture the shutdown function while still in request context
-        func = request.environ.get("werkzeug.server.shutdown")
-        
+        # Prefer the actual server object when available; the request-based
+        # shutdown hook is not reliable when Goblin runs via make_server().
+        server = app.config.get("GOBLIN_SERVER")
+
         def do_shutdown():
             import time
             time.sleep(0.5)  # Give time for response to be sent
-            if func is None:
-                # If running without werkzeug, just exit
-                import sys
-                sys.exit(0)
-            else:
+            if server is not None:
+                server.shutdown()
+                return
+
+            func = request.environ.get("werkzeug.server.shutdown")
+            if func is not None:
                 func()
         
         import threading
@@ -1118,6 +1120,7 @@ def run_gui(output_dir: str = "transcriptions", host: str = "127.0.0.1", port: i
 
     # Create a werkzeug server that can be shut down via the /shutdown endpoint
     server = make_server(host, port, app, threaded=True)
+    app.config["GOBLIN_SERVER"] = server
 
     watchdog_stop = threading.Event()
 
