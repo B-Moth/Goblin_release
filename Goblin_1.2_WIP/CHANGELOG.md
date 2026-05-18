@@ -65,6 +65,20 @@
 	validate the Ollama local-editing flow prior to shipping: `scripts/e2e_ollama_release_check.sh` and
 	`scripts/E2E_OLLAMA_CHECKLIST.md`.
 
+## 2026-05-18 — Runtime shutdown and queue fixes
+
+### UI / runtime
+- Fixed browser-close shutdown so Goblin now calls the actual server shutdown
+	path when the window or tab is closed, including Safari.
+- Added a heartbeat watchdog fallback so the process still exits cleanly if
+	close notifications are not delivered reliably by the browser.
+
+### Queue handling
+- Allowed the same file to be queued multiple times instead of silently
+	replacing an existing entry with the same display name.
+- Improved queue resume matching so duplicate display names are handled as
+	separate entries instead of collapsing into one.
+
 ## Goblin v1.1 changelog :
 
 ## Fixes :

@@ -127,26 +127,29 @@ When a transcription is open in the viewer, click **Du nerf, insecte !** to open
 - Click **Aperçu** first to generate a draft, then **Enregistrer** to save the exact markdown result as a new file.
 - Goblin saves the rewritten result as a new Markdown file and keeps the original transcription as-is.
 
-Status & background downloads
-- If a local model is missing the editor will warn before a large download
-	and pull the model in the background. A status indicator near the editor
-	informs you when a model is available, downloading, or not installed.
-	Use **Aperçu** to trigger a background download; the preview will resume
-	automatically once the model is ready.
+### Status & background downloads
 
-New presets
-- **Conversation (expérimental)** formats multi-speaker transcripts conservatively
-	(neutral labels when attribution is unclear). Use it for informal meeting
-	transcripts where speaker identity is not reliably detected.
-- **Traduire en anglais** translates non-English input into English but keeps
-	English input unchanged except for minor formatting cleanup.
+- If a local model is missing, the editor warns before a large download and
+  pulls the model in the background.
+- A status indicator near the editor shows when a model is available,
+  downloading, or not installed.
+- Use **Aperçu** to trigger a background download; the preview resumes
+  automatically once the model is ready.
 
-Release QA
+### New presets
+
+- **Conversation (expérimental)** formats multi-speaker transcripts
+  conservatively with neutral labels when attribution is unclear.
+- **Traduire en anglais** translates non-English input into English, while
+  leaving English input unchanged apart from minor formatting cleanup.
+
+### Release QA
+
 - A one-shot release QA script and manual checklist are included at
-	`scripts/e2e_ollama_release_check.sh` and `scripts/E2E_OLLAMA_CHECKLIST.md`.
-	Run the script on a machine with Ollama (or where it can be installed) to
-	validate server readiness, model presence, Flask endpoints and a local
-	rewrite smoke test.
+  `scripts/e2e_ollama_release_check.sh` and `scripts/E2E_OLLAMA_CHECKLIST.md`.
+- Run the script on a machine with Ollama, or where it can be installed, to
+  validate server readiness, model presence, Flask endpoints, and the local
+  rewrite smoke test.
 
 ## Uninstall
 
