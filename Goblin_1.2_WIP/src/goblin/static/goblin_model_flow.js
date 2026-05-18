@@ -1,4 +1,9 @@
 (() => {
+  // GoblinModelFlow — small client-side helper to manage checks and
+  // background pulls for local Ollama models used by the transcription
+  // editor. The module exposes a simple `init` and `prepareAction`
+  // function so the existing preview/save flows can ask the module to
+  // ensure the requested model is available before continuing.
   const state = {
     addMessage: null,
     getState: null,
@@ -35,6 +40,7 @@
     try {
       const response = await fetch('/ollama/check-model?model=' + encodeURIComponent(localModel));
       const data = await response.json().catch(() => ({}));
+      // Map backend messages to user-visible status badges.
       if (data.message === 'ollama_not_installed') {
         setStatus('État : Ollama non installé', 'error');
       } else if (data.message === 'pulling') {
@@ -56,6 +62,8 @@
       body: JSON.stringify({model: localModel}),
     }).then((r) => r.json().catch(() => ({})));
     if (!start.ok) {
+      // Backend refused the pull (e.g. Ollama not installed). Surface
+      // the error to the user and abort the action.
       state.addMessage?.('Impossible de démarrer le téléchargement du modèle local: ' + (start.error || 'erreur'), 'error');
       return false;
     }
@@ -63,6 +71,9 @@
     state.addMessage?.('Téléchargement du modèle démarré — attente de la fin...', 'info');
     setStatus('État : téléchargement en cours', 'warning');
 
+    // Poll job status until the server reports the pull is complete or
+    // failed. We keep polling at a modest interval to avoid excessive
+    // server load.
     const poll = setInterval(async () => {
       const s = await fetch('/ollama/pull-status?model=' + encodeURIComponent(localModel)).then((r) => r.json().catch(() => ({})));
       if (s && s.status === 'done') {
@@ -93,10 +104,14 @@
         return false;
       }
 
+      // If the model is already present the caller can proceed.
       if (data.present) {
         return true;
       }
 
+      // For a save action we prefer that the user runs a preview first
+      // which triggers the model download; this avoids long-blocking
+      // saves where the user may be surprised by a large download.
       if (actionName === 'save') {
         state.addMessage?.("Le modèle local n'est pas encore prêt. Lancez un Aperçu pour déclencher le téléchargement, puis réessayez l'enregistrement.", 'warning');
         return false;
@@ -107,6 +122,10 @@
         return false;
       }
 
+      // Start the background pull and wait until it's finished before
+      // allowing the preview flow to continue. The UI behaviour is to
+      // retry the preview transparently via `state.onRetryPreview` when
+      // the pull completes.
       await startPullAndWait(localModel, state.onRetryPreview);
       return false;
     } catch (err) {

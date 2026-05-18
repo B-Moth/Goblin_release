@@ -23,6 +23,20 @@
 - Kept the project runnable from source with the minimum web dependencies installed lazily.
 - Preserved the existing offline transcription stack while making local editor dependencies optional where possible.
 
+## 2026-05-18 — Code clarity and documentation
+
+### Internal
+- Added explanatory comments and docstrings across the Ollama runtime,
+	installer helpers and the web UI code to make background-pull behavior,
+	job state, and local vs remote provider logic clearer for future
+	contributors.
+- Documented concurrency considerations for `app.ollama_jobs` and the
+	reasoning behind a conservative single-worker `ThreadPoolExecutor`.
+
+### Developer experience
+- Improved `CHANGELOG.md` with the above notes and ensured the new
+	static client-side module is tracked in version control.
+
 ## Goblin v1.1 changelog :
 
 ## Fixes :
@@ -35,7 +49,7 @@
 ## Dev :
 - simplified version change procedure
 - drag and drop one file at a time now put them in a queue
-- kill goblin script in case of rebelous goblins
+- kill script in case of rebelous goblins
 - added Du nerf Insecte ! to force goblins to work on editing the transcription to make them more usefull
 
 ## Tests :

@@ -321,7 +321,16 @@ def create_app(output_dir: str = "transcriptions", offline: bool = False) -> Fla
     app.smart_naming_executor = ThreadPoolExecutor(max_workers=1)
     # Thread pool for background Ollama model pulls
     app.ollama_executor = ThreadPoolExecutor(max_workers=1)
-    # Track ollama pull jobs: model -> {status: 'idle'|'pulling'|'done'|'failed', message: str}
+    # Track ollama pull jobs: model -> {status: 'idle'|'queued'|'pulling'|'done'|'failed', message: str}
+    #
+    # Notes:
+    # - `app.ollama_jobs` is a lightweight shared mapping mutated by the
+    #   background worker started via `app.ollama_executor`. It is not
+    #   protected by a lock; the executor is intentionally configured with
+    #   a single worker which keeps races unlikely. If you increase the
+    #   executor size you should add synchronization around this mapping.
+    # - The mapping is sent directly in JSON responses for the UI to
+    #   poll and display progress.
     app.ollama_jobs = {}
 
     # Whisper model size (for offline audio)
@@ -870,6 +879,9 @@ def create_app(output_dir: str = "transcriptions", offline: bool = False) -> Fla
         model = (request.args.get('model') or '').strip()
         if not model:
             return jsonify({'ok': False, 'present': False, 'message': 'model param is required'}), 400
+        # Delegates to `goblin.ollama_runtime.check_ollama_model` which
+        # inspects the system and the `app.ollama_jobs` mapping to report
+        # whether a model is present, currently being pulled, or missing.
         return jsonify(check_ollama_model(model, app.ollama_jobs))
 
     @app.route('/ollama/pull-model', methods=['POST'])
@@ -878,6 +890,10 @@ def create_app(output_dir: str = "transcriptions", offline: bool = False) -> Fla
         model = (data.get('model') or '').strip()
         if not model:
             return jsonify({'ok': False, 'error': 'model is required'}), 400
+        # Request a background pull via the shared executor. This call is
+        # non-blocking: it schedules the pull worker and returns the
+        # immediate job status. The client should poll `/ollama/pull-status`
+        # until the job reaches 'done' or 'failed'.
         result = start_ollama_pull(model, app.ollama_executor, app.ollama_jobs)
         if not result.get('ok'):
             return jsonify(result), 400

@@ -1,4 +1,16 @@
-"""Shared Ollama helpers for installer and uninstall scripts."""
+"""Shared Ollama helpers for installer and uninstall scripts.
+
+This small helper module is used by the macOS installer and the
+uninstaller to detect Ollama, attempt a Homebrew install when possible,
+and to pre-pull or remove configured models. It intentionally keeps
+behaviour explicit and prints human-friendly messages because installer
+scripts typically run interactively.
+
+The helper temporarily inserts `src_dir` on `sys.path` to import the
+project's configuration loader. This mirrors how installers run from the
+repository tree; callers should pass the correct `src_dir` (the package
+source root) when invoking these helpers.
+"""
 
 from __future__ import annotations
 
@@ -22,6 +34,9 @@ def ensure_ollama_available() -> bool:
         return False
 
     try:
+        # Attempt a non-interactive Homebrew install. If this fails we
+        # surface a friendly message and return False so the caller can
+        # fall back to alternative flows.
         subprocess.check_call(["brew", "install", "ollama"])
         print("✓ Ollama installed via Homebrew.")
         return which("ollama") is not None
@@ -37,6 +52,9 @@ def preload_default_models(src_dir: Path, model_names: list[str]) -> None:
         return
 
     try:
+        # Temporarily add the source directory so we can load the bundled
+        # editor config. This allows installers to honour the same local
+        # model defaults that the running application uses.
         sys.path.insert(0, str(src_dir))
         from goblin.transcription_editor import load_editor_config
         cfg = load_editor_config()
@@ -60,6 +78,8 @@ def preload_default_models(src_dir: Path, model_names: list[str]) -> None:
                 subprocess.check_call(["ollama", "pull", model])
                 print(f"✓ Pre-pulled: {model}")
             except Exception:
+                # Failures here are non-fatal for the installer; log and
+                # continue with the remaining models.
                 print(f"! Failed to pre-pull model {model}; continue.")
     except Exception:
         print("! Could not preload Ollama models (config load failed)")
@@ -72,6 +92,9 @@ def purge_configured_models(src_dir: Path) -> None:
         return
 
     try:
+        # We import the editor config to discover which models were
+        # configured by the user or installer. If this import fails we
+        # cannot safely determine what to remove, so we bail out.
         sys.path.insert(0, str(src_dir))
         from goblin.transcription_editor import load_editor_config
     except Exception:

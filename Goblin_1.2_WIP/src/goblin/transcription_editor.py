@@ -287,7 +287,12 @@ def rewrite_transcription(
             raise AuthenticationError("OPENAI_API_KEY is required for transcription editing")
         client = OpenAI()
     else:
-        # Ensure Ollama model is available (lazy pull on first use)
+        # Local provider (Ollama): ensure the model exists locally.
+        # `ensure_ollama_model_available` will attempt a blocking pull on
+        # first use so the caller receives a clear error if the model
+        # cannot be obtained. The created `OpenAI` client points to the
+        # local Ollama HTTP endpoint and uses the magic API key
+        # 'ollama' understood by the Ollama bridge.
         ensure_ollama_model_available(resolved_model)
         client = OpenAI(
             base_url=str(config.get("local_base_url", "http://127.0.0.1:11434/v1")),
