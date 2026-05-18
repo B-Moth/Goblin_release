@@ -1346,15 +1346,24 @@
   folderInput.addEventListener('change', () => {
     const files = folderInput.files;
     if (resumeMode) {
-      // Build ordered array from persisted log, matching names to selected files
-      const map = Array.from(files).reduce((m, f) => (m.set(getDisplayName(f), f), m), new Map());
+      // Build ordered array from persisted log, matching names to selected files.
+      // Use arrays of files per name so multiple files with the same display
+      // name can be matched to multiple persisted entries.
+      const map = new Map();
+      for (const f of files) {
+        const name = getDisplayName(f);
+        if (!map.has(name)) map.set(name, []);
+        map.get(name).push(f);
+      }
       const ordered = [];
       for (const entry of persistedQueueLog) {
         if (entry.status === 'done') continue;
-        const f = map.get(entry.name);
-        if (f) ordered.push(f);
+        const arr = map.get(entry.name);
+        if (arr && arr.length) {
+          ordered.push(arr.shift());
+        }
       }
-      // Append any files not present in the log
+      // Append any remaining files not present in the ordered list
       for (const f of Array.from(files)) {
         if (!ordered.some(x => getDisplayName(x) === getDisplayName(f))) ordered.push(f);
       }
@@ -1664,15 +1673,8 @@
     // If a queue is already running, append new files to it (avoid replacing
     // the current queue which would interrupt the in-progress item).
     if (queueRunning) {
-      // Append only files not already present in queue (by display name)
-      const existing = new Set(queueFiles.map(f => getDisplayName(f)));
-      for (const f of incoming) {
-        const name = getDisplayName(f);
-        if (!existing.has(name)) {
-          queueFiles.push(f);
-          existing.add(name);
-        }
-      }
+      // Append all incoming files to the running queue; allow duplicates
+      for (const f of incoming) queueFiles.push(f);
       populateQueue(queueFiles);
       addMessage(`${incoming.length} fichier(s) ajoutés à la file existante.`, 'info');
       return;
@@ -1683,14 +1685,9 @@
     // race conditions where a second quick submission would overwrite the
     // first one in the UI.
     if (!queueRunning && queueFiles.length) {
-      const existing = new Set(queueFiles.map(f => getDisplayName(f)));
-      for (const f of incoming) {
-        const name = getDisplayName(f);
-        if (!existing.has(name)) {
-          queueFiles.push(f);
-          existing.add(name);
-        }
-      }
+      // Append all incoming files to the queued list (not started yet);
+      // duplicates are allowed so the same file can be queued multiple times.
+      for (const f of incoming) queueFiles.push(f);
       populateQueue(queueFiles);
       addMessage(`${incoming.length} fichier(s) ajoutés à la file existante.`, 'info');
       return;
