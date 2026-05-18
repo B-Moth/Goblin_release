@@ -37,6 +37,21 @@
 - Improved `CHANGELOG.md` with the above notes and ensured the new
 	static client-side module is tracked in version control.
 
+## 2026-05-18 — Editor prompt improvements
+
+### UI / editor
+- Improved the `Conversation` preset prompt to better handle uncertain
+	multi-speaker transcriptions without hallucinating speaker identity.
+- Marked `Conversation` as experimental in the editor option label.
+- Added a new `Traduire en anglais` preset with explicit behavior:
+	translate to English only when source is not English, otherwise keep
+	the text unchanged (except minimal formatting cleanup).
+
+### Prompting behavior
+- Updated system/user language instructions so default presets preserve
+	the source language, while translation presets can explicitly opt into
+	English output.
+
 ## Goblin v1.1 changelog :
 
 ## Fixes :

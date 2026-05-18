@@ -38,7 +38,7 @@ _DEFAULT_EDITOR_CONFIG: dict[str, Any] = {
     "system_prompt": (
         "You are a careful editorial assistant. Rewrite only from the transcription provided. "
         "Do not invent facts, do not add context, and do not omit meaningful information. "
-        "Language rule (strict): detect the transcription language and answer in that same language only; never translate to English unless the transcription is already in English. "
+        "Language rule (strict): keep the output in the same language as the transcription unless the selected preset explicitly requests translation. "
         "Return only Markdown content. "
         "Do not add any introduction, explanation, commentary, suggestions, code fences, or meta text."
     ),
@@ -70,12 +70,22 @@ _DEFAULT_EDITOR_CONFIG: dict[str, Any] = {
             ),
         },
         "conversation": {
-            "label": "Conversation",
+            "label": "Conversation (expérimental)",
             "slug": "conversation",
             "prompt": (
                 "Rewrite the transcription as a natural conversation transcript with clear speaker turns. "
-                "Use labels like 'Speaker 1', 'Speaker 2' when names are unknown. Preserve the original meaning, tone and key details. "
-                "Do not invent content and do not omit meaningful information."
+                "Important: if speaker identity is uncertain, do not guess names, gender, role, or exact voice count. "
+                "Use neutral labels like 'Intervenant 1', 'Intervenant 2', and merge turns when attribution is ambiguous. "
+                "Preserve the original meaning, tone and key details. Do not invent content and do not omit meaningful information."
+            ),
+        },
+        "translate_english": {
+            "label": "Traduire en anglais",
+            "slug": "translate_english",
+            "prompt": (
+                "Translate the transcription into natural English while preserving meaning, tone and factual details. "
+                "If the transcription is already in English, keep the original text unchanged except for minimal formatting cleanup. "
+                "Do not add, remove, or invent information."
             ),
         },
         "custom": {
@@ -309,12 +319,19 @@ def rewrite_transcription(
             api_key="ollama",
         )
 
+    language_rule = (
+        "Language rule (strict): translate to English. If the transcription is already in English, keep content unchanged "
+        "(only minimal formatting cleanup is allowed)."
+        if preset_key == "translate_english"
+        else "Language rule (strict): the output must be in the same language as the transcription text below. Do not translate."
+    )
+
     user_parts = [
         f"Preset: {preset.get('label', preset_key)}",
         "",
         f"Instructions:\n{preset.get('prompt', '')}",
         "",
-        "Language rule (strict): the output must be in the same language as the transcription text below. Do not translate.",
+        language_rule,
         "",
     ]
     if preset_key == "custom":
