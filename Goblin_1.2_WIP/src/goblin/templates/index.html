@@ -1600,6 +1600,7 @@
    function quitApplication() {
      const confirm_quit = confirm('Êtes-vous sûr de vouloir quitter Goblin ? (terminer tous les traitements en cours et fermer l\'application)');
      if (!confirm_quit) return;
+     window.__goblinExplicitQuit = true;
      
      // Abort current transcription
      if (currentAbortController) {
@@ -1630,6 +1631,27 @@
        window.close();
      });
    }
+
+   function notifyGoblinShutdownOnClose() {
+     if (window.__goblinExplicitQuit) return;
+     try {
+       if (navigator.sendBeacon) {
+         navigator.sendBeacon('/shutdown', new Blob([], {type: 'text/plain'}));
+         return;
+       }
+     } catch (err) {
+       console.warn('sendBeacon shutdown failed:', err);
+     }
+
+     try {
+       fetch('/shutdown', {method: 'POST', keepalive: true}).catch(() => {});
+     } catch (err) {
+       console.warn('Fallback shutdown request failed:', err);
+     }
+   }
+
+   window.addEventListener('pagehide', notifyGoblinShutdownOnClose);
+   window.addEventListener('beforeunload', notifyGoblinShutdownOnClose);
 
    function removeQueueItem(index) {
      // If removing an item before it is processed, remove from queue and refresh UI
