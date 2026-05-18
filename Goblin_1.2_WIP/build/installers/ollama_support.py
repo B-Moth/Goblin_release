@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import subprocess
 import sys
+import time
 from pathlib import Path
 from shutil import which
 
@@ -45,10 +46,59 @@ def ensure_ollama_available() -> bool:
         return False
 
 
+def _ollama_server_ready() -> bool:
+    """Return True when the local Ollama server responds to CLI queries."""
+    try:
+        result = subprocess.run(["ollama", "list"], capture_output=True, text=True, check=False)
+        return result.returncode == 0
+    except Exception:
+        return False
+
+
+def ensure_ollama_server_running() -> bool:
+    """Try to start Ollama service and wait until it becomes reachable.
+
+    Returns True if the server is reachable, otherwise False.
+    """
+    if which("ollama") is None:
+        return False
+
+    if _ollama_server_ready():
+        return True
+
+    print("ℹ Ollama is installed but not running — attempting to start service...")
+
+    if which("brew") is not None:
+        try:
+            # Homebrew service mode is preferred on macOS installer runs.
+            subprocess.run(["brew", "services", "start", "ollama"], check=False)
+        except Exception:
+            pass
+
+    # Give the daemon a short warm-up window before pre-pulls.
+    for _ in range(12):
+        if _ollama_server_ready():
+            print("✓ Ollama server is running.")
+            return True
+        time.sleep(1)
+
+    print(
+        "⚠ Ollama server is still unreachable. Start it manually with '\n"
+        "  brew services start ollama\n"
+        "or:\n"
+        "  OLLAMA_FLASH_ATTENTION=\"1\" OLLAMA_KV_CACHE_TYPE=\"q8_0\" ollama serve"
+    )
+    return False
+
+
 def preload_default_models(src_dir: Path, model_names: list[str]) -> None:
     """Pre-pull the requested Ollama models if Ollama is available."""
     if which("ollama") is None:
         print("ℹ Skipping model pre-pull: Ollama not available.")
+        return
+
+    if not ensure_ollama_server_running():
+        print("ℹ Skipping model pre-pull: Ollama server is not reachable.")
         return
 
     try:
