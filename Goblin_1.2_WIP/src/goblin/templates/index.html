@@ -821,6 +821,8 @@
   </main>
 </div>
 
+<script src="{{ url_for('static', filename='goblin_model_flow.js') }}"></script>
+
 <script>
   // ── Mode state (seeded from server) ─────────────────────────────
   let handwritingOffline = {{ 'true' if handwriting_offline else 'false' }};
@@ -897,45 +899,10 @@
     if (localModelSelect) {
       localModelSelect.disabled = editorProvider !== 'local';
     }
-    refreshLocalModelStatus().catch(err => console.warn('Failed to refresh local model status:', err));
+    if (window.GoblinModelFlow) {
+      window.GoblinModelFlow.refreshStatus();
+    }
     syncTranscriptionEditorState();
-  }
-
-  function setLocalModelStatus(text, kind) {
-    const editorStatus = document.getElementById('editor-local-model-status');
-    const viewerStatus = document.getElementById('viewer-local-model-status');
-    [editorStatus, viewerStatus].forEach(el => {
-      if (!el) return;
-      el.textContent = text;
-      el.dataset.kind = kind || '';
-    });
-  }
-
-  async function refreshLocalModelStatus() {
-    const providerSelect = document.getElementById('editor-provider-select');
-    const localModelSelect = document.getElementById('editor-local-model-select');
-    if (!providerSelect || !localModelSelect) return;
-    const provider = providerSelect.value || editorProvider;
-    const localModel = localModelSelect.value || editorLocalModel;
-    if (provider !== 'local') {
-      setLocalModelStatus('État : mode en ligne', 'info');
-      return;
-    }
-    try {
-      const res = await fetch('/ollama/check-model?model=' + encodeURIComponent(localModel));
-      const data = await res.json().catch(() => ({}));
-      if (data && data.message === 'ollama_not_installed') {
-        setLocalModelStatus('État : Ollama non installé', 'error');
-      } else if (data && data.message === 'pulling') {
-        setLocalModelStatus('État : téléchargement en cours', 'warning');
-      } else if (data && data.present) {
-        setLocalModelStatus('État : modèle disponible', 'success');
-      } else {
-        setLocalModelStatus('État : modèle à télécharger', 'warning');
-      }
-    } catch (err) {
-      setLocalModelStatus('État : vérification indisponible', 'warning');
-    }
   }
 
   function updateCustomFormatUI() {
@@ -1144,60 +1111,6 @@
     editorPresetSelect.addEventListener('change', updateCustomFormatUI);
     editorPresetSelect.addEventListener('change', resetTranscriptionRewritePreview);
   }
-  const editorProviderSelect = document.getElementById('editor-provider-select');
-  if (editorProviderSelect) {
-    editorProviderSelect.value = editorProvider;
-    editorProviderSelect.addEventListener('change', () => {
-      resetTranscriptionRewritePreview();
-      syncTranscriptionEditorModeState();
-    });
-  }
-  const editorLocalModelSelect = document.getElementById('editor-local-model-select');
-  if (editorLocalModelSelect) {
-    editorLocalModelSelect.value = editorLocalModel;
-    editorLocalModelSelect.addEventListener('change', () => {
-      resetTranscriptionRewritePreview();
-      syncTranscriptionEditorModeState();
-    });
-  }
-
-  // Viewer-level provider/model quick controls (mirror modal selections)
-  const viewerEditorProviderSelect = document.getElementById('viewer-editor-provider-select');
-  const viewerEditorLocalModelSelect = document.getElementById('viewer-editor-local-model-select');
-  if (viewerEditorProviderSelect) {
-    // Seed from server value
-    viewerEditorProviderSelect.value = editorProvider;
-    viewerEditorProviderSelect.addEventListener('change', (e) => {
-      const val = e.target.value;
-      editorProvider = val || editorProvider;
-      // Mirror into modal select if present
-      if (editorProviderSelect) editorProviderSelect.value = editorProvider;
-      resetTranscriptionRewritePreview();
-      syncTranscriptionEditorModeState();
-    });
-  }
-  if (viewerEditorLocalModelSelect) {
-    viewerEditorLocalModelSelect.value = editorLocalModel;
-    viewerEditorLocalModelSelect.addEventListener('change', (e) => {
-      const val = e.target.value;
-      editorLocalModel = val || editorLocalModel;
-      if (editorLocalModelSelect) editorLocalModelSelect.value = editorLocalModel;
-      resetTranscriptionRewritePreview();
-      syncTranscriptionEditorModeState();
-    });
-  }
-
-  // Keep modal and viewer selects in sync when modal controls change
-  if (editorProviderSelect && viewerEditorProviderSelect) {
-    editorProviderSelect.addEventListener('change', (e) => {
-      viewerEditorProviderSelect.value = editorProviderSelect.value;
-    });
-  }
-  if (editorLocalModelSelect && viewerEditorLocalModelSelect) {
-    editorLocalModelSelect.addEventListener('change', (e) => {
-      viewerEditorLocalModelSelect.value = editorLocalModelSelect.value;
-    });
-  }
   const customFormatInput = document.getElementById('custom-format-input');
   if (customFormatInput) {
     customFormatInput.addEventListener('input', resetTranscriptionRewritePreview);
@@ -1210,51 +1123,8 @@
       addMessage('Clé API requise pour réécrire une transcription.', 'error');
       return;
     }
-    // If local provider, check whether the Ollama model is present; warn user before pulling
-    if (provider === 'local') {
-      try {
-        const check = await fetch('/ollama/check-model?model=' + encodeURIComponent(localModel));
-        const info = await check.json().catch(() => ({}));
-        if (check.ok && info && info.present === false) {
-          if (info.message === 'ollama_not_installed') {
-            addMessage("Le runtime local (Ollama) n'est pas installé. Installez Ollama ou passez en mode en ligne.", 'error');
-            return;
-          }
-          const confirmPull = confirm('Le modèle local sélectionné n\'est pas présent et sera téléchargé (plusieurs centaines de MB). Voulez-vous continuer ?');
-          if (!confirmPull) return;
-
-          // Start background pull and poll until ready, then continue to preview
-          const start = await fetch('/ollama/pull-model', {
-            method: 'POST', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({model: localModel})
-          }).then(r => r.json().catch(() => ({})));
-          if (!start.ok) {
-            addMessage('Impossible de démarrer le téléchargement du modèle local: ' + (start.error || 'erreur'), 'error');
-            return;
-          }
-          addMessage('Téléchargement du modèle démarré — attente de la fin...', 'info');
-          setLocalModelStatus('État : téléchargement en cours', 'warning');
-          // Poll for completion
-          const poll = setInterval(async () => {
-            const s = await fetch('/ollama/pull-status?model=' + encodeURIComponent(localModel)).then(r => r.json().catch(() => ({})));
-            if (s && s.status === 'done') {
-              clearInterval(poll);
-              setLocalModelStatus('État : modèle disponible', 'success');
-              addMessage('Modèle téléchargé — génération de l\'aperçu...', 'info');
-              // Retry preview once model is ready
-              previewTranscriptionRewrite();
-            } else if (s && s.status === 'failed') {
-              clearInterval(poll);
-              setLocalModelStatus('État : échec du téléchargement', 'error');
-              addMessage('Le téléchargement du modèle a échoué : ' + (s.message || ''), 'error');
-            }
-          }, 2500);
-          return;
-        }
-      } catch (err) {
-        // If we cannot check, warn but allow proceeding (server-side will handle failures)
-        console.warn('Model check failed:', err);
-      }
+    if (window.GoblinModelFlow && !(await window.GoblinModelFlow.prepareAction('preview'))) {
+      return;
     }
     if (!currentTranscriptionName) {
       addMessage('Sélectionnez une transcription à réécrire.', 'warning');
@@ -1300,21 +1170,8 @@
       addMessage('Clé API requise pour réécrire une transcription.', 'error');
       return;
     }
-    if (provider === 'local') {
-      try {
-        const check = await fetch('/ollama/check-model?model=' + encodeURIComponent(localModel));
-        const info = await check.json().catch(() => ({}));
-        if (check.ok && info && info.present === false) {
-          if (info.message === 'ollama_not_installed') {
-            addMessage("Le runtime local (Ollama) n'est pas installé. Installez Ollama ou passez en mode en ligne.", 'error');
-            return;
-          }
-          addMessage('Le modèle local n\'est pas encore prêt. Lancez un Aperçu pour déclencher le téléchargement, puis réessayez l\'enregistrement.', 'warning');
-          return;
-        }
-      } catch (err) {
-        console.warn('Model check failed:', err);
-      }
+    if (window.GoblinModelFlow && !(await window.GoblinModelFlow.prepareAction('save'))) {
+      return;
     }
     if (!currentTranscriptionName) {
       addMessage('Sélectionnez une transcription à réécrire.', 'warning');
@@ -1421,6 +1278,16 @@
   updateHandwritingUI();
   updateAudioUI();
   syncTranscriptionEditorModeState();
+
+  if (window.GoblinModelFlow) {
+    window.GoblinModelFlow.init({
+      addMessage,
+      getState: () => ({ editorProvider, editorLocalModel }),
+      onRetryPreview: () => previewTranscriptionRewrite(),
+      onRetrySave: () => submitTranscriptionRewrite(),
+    });
+    window.GoblinModelFlow.bind();
+  }
 
   // Persisted queue from previous session (server-side)
   let persistedQueueLog = [];

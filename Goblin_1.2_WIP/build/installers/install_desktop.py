@@ -16,7 +16,6 @@ import platform
 import shutil
 import stat
 import sys
-import subprocess
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -32,6 +31,7 @@ sys.path.insert(0, str(SRC_DIR))
 sys.path.insert(0, str(REPO_ROOT))
 
 from version import APP_BASENAME
+from ollama_support import ensure_ollama_available, preload_default_models
 
 
 # ── Helpers ────────────────────────────────────────────────────────────
@@ -110,58 +110,8 @@ def _install_macos(exe: Path) -> None:
     print(f"✓ Launcher scripts in {launcher_dir}")
     print(f"  Double-click the launcher or drag {APP_BASENAME}.app to the Dock.")
 
-    # Try to ensure Ollama is available for local-model editing.
-    try:
-        from shutil import which
-        if which("ollama") is None:
-            print("ℹ Ollama not found on PATH — attempting to install via Homebrew...")
-            if which("brew"):
-                try:
-                    subprocess.check_call(["brew", "install", "ollama"])  # may require sudo or user interaction
-                    print("✓ Ollama installed via Homebrew.")
-                except Exception:
-                    print(
-                        "✗ Failed to install Ollama via Homebrew. Please install Ollama manually: https://ollama.com"
-                    )
-            else:
-                print(
-                    "⚠ Homebrew not found. Install Homebrew (https://brew.sh) and then Ollama (https://ollama.com)."
-                )
-        else:
-            print("✓ Ollama detected on PATH.")
-    except Exception:
-        print("⚠ Could not check or install Ollama automatically. See https://ollama.com for manual installation.")
-
-    # Pre-pull default local model(s) configured for the editor (if Ollama available)
-    try:
-        from shutil import which
-        if which("ollama"):
-            try:
-                # Import editor config from source tree
-                sys.path.insert(0, str(SRC_DIR))
-                from goblin.transcription_editor import load_editor_config
-                cfg = load_editor_config()
-                preload = cfg.get("preload_local_models") or []
-                # Always include configured default model
-                default_model = cfg.get("local_default_model")
-                if default_model and default_model not in preload:
-                    preload = [default_model] + list(preload)
-
-                for m in preload:
-                    if not m:
-                        continue
-                    try:
-                        print(f"ℹ Pre-pulling Ollama model: {m} (installer)")
-                        subprocess.check_call(["ollama", "pull", m])
-                        print(f"✓ Pre-pulled: {m}")
-                    except Exception:
-                        print(f"! Failed to pre-pull model {m}; continue.")
-            except Exception:
-                print("! Could not preload Ollama models (config load failed)")
-        else:
-            print("ℹ Skipping model pre-pull: Ollama not available.")
-    except Exception:
-        print("! Pre-pull step skipped due to unexpected error.")
+    ensure_ollama_available()
+    preload_default_models(SRC_DIR, [])
 
 
 def _install_linux(exe: Path) -> None:
