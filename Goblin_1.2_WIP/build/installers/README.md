@@ -12,9 +12,9 @@ python build.py
 ```
 
 **Output:**
-- Windows: `../dist/Goblin_1.2_WIP_WIP_WIP_WIP_WIP.exe`
-- macOS: `../dist/Goblin_1.2_WIP_WIP_WIP_WIP_WIP.app`
-- Linux: `../dist/Goblin_1.2_WIP_WIP_WIP_WIP_WIP`
+- Windows: `../dist/Goblin_1.2_WIP_WIP_WIP_WIP_WIP_WIP_WIP.exe`
+- macOS: `../dist/Goblin_1.2_WIP_WIP_WIP_WIP_WIP_WIP_WIP.app`
+- Linux: `../dist/Goblin_1.2_WIP_WIP_WIP_WIP_WIP_WIP_WIP`
 
 **Requirements:**
 - PyInstaller installed (`pip install pyinstaller`)
@@ -110,14 +110,14 @@ This removes the browser app launchers plus downloaded build/model content, but 
 - Delete `build/` and `dist/` folders, retry
 
 ### Installation Fails
-- Ensure the app exists: `ls ../dist/Goblin_1.2_WIP_WIP_WIP_WIP_WIP*`
-- Check permissions: `chmod +x ../dist/Goblin_1.2_WIP_WIP_WIP_WIP_WIP` (Linux/macOS)
+- Ensure the app exists: `ls ../dist/Goblin_1.2_WIP_WIP_WIP_WIP_WIP_WIP_WIP*`
+- Check permissions: `chmod +x ../dist/Goblin_1.2_WIP_WIP_WIP_WIP_WIP_WIP_WIP` (Linux/macOS)
 - Try running `python install_desktop.py` again
 
 ### App Won't Run
-- macOS: `xattr -d com.apple.quarantine /Applications/Goblin_1.2_WIP_WIP_WIP_WIP_WIP.app`
+- macOS: `xattr -d com.apple.quarantine /Applications/Goblin_1.2_WIP_WIP_WIP_WIP_WIP_WIP_WIP.app`
 - Windows: Check antivirus software (false positives)
-- Linux: `chmod +x Goblin_1.2_WIP_WIP_WIP_WIP_WIP`
+- Linux: `chmod +x Goblin_1.2_WIP_WIP_WIP_WIP_WIP_WIP_WIP`
 
 ---
 
@@ -137,11 +137,11 @@ None required, but scripts may use:
 ## File Locations After Installation
 
 ### Windows
-- App: Desktop shortcut or `C:\Program Files\Goblin_1.2_WIP_WIP_WIP_WIP_WIP\Goblin_1.2_WIP_WIP_WIP_WIP_WIP.exe`
+- App: Desktop shortcut or `C:\Program Files\Goblin_1.2_WIP_WIP_WIP_WIP_WIP_WIP_WIP\Goblin_1.2_WIP_WIP_WIP_WIP_WIP_WIP_WIP.exe`
 - Config: `%USERPROFILE%\AppData\Local\Goblin\`
 
 ### macOS
-- App: `~/Applications/Goblin_1.2_WIP_WIP_WIP_WIP_WIP.app`
+- App: `~/Applications/Goblin_1.2_WIP_WIP_WIP_WIP_WIP_WIP_WIP.app`
 - Launchers: `~/Applications/Goblin Launchers/`
 - Config: `~/.config/goblin/`
 
