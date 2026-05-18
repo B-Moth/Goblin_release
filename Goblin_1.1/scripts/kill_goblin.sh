@@ -9,7 +9,7 @@ PY)"
 
 echo "Killing Goblin processes..."
 pkill -f Goblin || true
-pkill -f Goblin_1.2_WIP || true
+pkill -f Goblin_1.1 || true
 
 if [ -f "$TEMP_PID" ]; then
   echo "Removing PID file $TEMP_PID"

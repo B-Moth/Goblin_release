@@ -9,9 +9,9 @@ Goblin transcribes audio and converts handwritten images to editable Markdown fi
 
 ### Already Have the Executable? (see dist folder if existing) 
 
-**Windows:** Double-click `dist/Goblin_1.1_WIP_WIP_WIP_WIP_WIP_WIP_WIP.exe`  
-**macOS:** Open `dist/Goblin_1.1_WIP_WIP_WIP_WIP_WIP_WIP_WIP.app`  
-**Linux:** Run `chmod +x dist/Goblin_1.1_WIP_WIP_WIP_WIP_WIP_WIP_WIP && ./dist/Goblin_1.1_WIP_WIP_WIP_WIP_WIP_WIP_WIP`
+**Windows:** Double-click `dist/Goblin_1.1.exe`  
+**macOS:** Open `dist/Goblin_1.1.app`  
+**Linux:** Run `chmod +x dist/Goblin_1.1 && ./dist/Goblin_1.1`
 
 ### No Executable? Build from Source
 
@@ -156,9 +156,9 @@ This leaves your transcriptions untouched and empty the models cached in Hugging
 | Issue | Solution |
 |-------|----------|
 | **Python not found** | Install Python 3.11 or 3.12 from python.org and use `py -3.11` or `py -3.12` |
-| **Permission denied** | Run: `chmod +x Goblin_1.1_WIP_WIP_WIP_WIP_WIP_WIP_WIP` (Linux/macOS) |
+| **Permission denied** | Run: `chmod +x Goblin_1.1` (Linux/macOS) |
 | **"Executable not found"** | Run `python build/installers/build.py` first |
-| **macOS "App is damaged"** | Run: `xattr -d com.apple.quarantine /Applications/Goblin_1.1_WIP_WIP_WIP_WIP_WIP_WIP_WIP.app` |
+| **macOS "App is damaged"** | Run: `xattr -d com.apple.quarantine /Applications/Goblin_1.1.app` |
 | **Missing dependencies** | Run: `pip install -r build/REQUIREMENTS.txt` |
 | **Slow first run** | Normal – offline mode downloads models (~2 GB) on first use |
 
@@ -194,7 +194,7 @@ If Goblin appears to be already running or the app opens twice, use the helper s
 
 This script attempts to stop processes whose command line contains `Goblin` and removes the temporary PID file used by the single-instance guard.
 
-## 🔁 Update Version
+## 🔁 Update Version (!! Bugged !!)
 
 When you want to bump the release name shown in the README, installer output, and generated filenames:
 
