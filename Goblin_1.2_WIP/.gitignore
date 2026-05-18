@@ -3,7 +3,6 @@
 # Generated executables (built from source)
 *.exe
 *.app/
-Goblin_*
 
 # Build artifacts
 dist/
