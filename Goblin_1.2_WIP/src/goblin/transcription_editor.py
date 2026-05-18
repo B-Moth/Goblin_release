@@ -38,7 +38,8 @@ _DEFAULT_EDITOR_CONFIG: dict[str, Any] = {
     "system_prompt": (
         "You are a careful editorial assistant. Rewrite only from the transcription provided. "
         "Do not invent facts, do not add context, and do not omit meaningful information. "
-        "Keep the response in the same language as the transcription. Return only Markdown content. "
+        "Language rule (strict): detect the transcription language and answer in that same language only; never translate to English unless the transcription is already in English. "
+        "Return only Markdown content. "
         "Do not add any introduction, explanation, commentary, suggestions, code fences, or meta text."
     ),
     "presets": {
@@ -66,6 +67,15 @@ _DEFAULT_EDITOR_CONFIG: dict[str, Any] = {
                 "Rewrite the transcription as a structured and clear document. Present the information like technical documentation, a report, or a field note. "
                 "Organize the content with useful Markdown headings and sections. Keep only the information that is present in the transcription. "
                 "Do not invent or infer anything."
+            ),
+        },
+        "conversation": {
+            "label": "Conversation",
+            "slug": "conversation",
+            "prompt": (
+                "Rewrite the transcription as a natural conversation transcript with clear speaker turns. "
+                "Use labels like 'Speaker 1', 'Speaker 2' when names are unknown. Preserve the original meaning, tone and key details. "
+                "Do not invent content and do not omit meaningful information."
             ),
         },
         "custom": {
@@ -303,6 +313,8 @@ def rewrite_transcription(
         f"Preset: {preset.get('label', preset_key)}",
         "",
         f"Instructions:\n{preset.get('prompt', '')}",
+        "",
+        "Language rule (strict): the output must be in the same language as the transcription text below. Do not translate.",
         "",
     ]
     if preset_key == "custom":
