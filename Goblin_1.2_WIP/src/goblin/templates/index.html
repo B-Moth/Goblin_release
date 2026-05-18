@@ -1678,6 +1678,24 @@
       return;
     }
 
+    // If there is a queued list shown but the queue isn't running yet,
+    // append new files instead of replacing the current list. This avoids
+    // race conditions where a second quick submission would overwrite the
+    // first one in the UI.
+    if (!queueRunning && queueFiles.length) {
+      const existing = new Set(queueFiles.map(f => getDisplayName(f)));
+      for (const f of incoming) {
+        const name = getDisplayName(f);
+        if (!existing.has(name)) {
+          queueFiles.push(f);
+          existing.add(name);
+        }
+      }
+      populateQueue(queueFiles);
+      addMessage(`${incoming.length} fichier(s) ajoutés à la file existante.`, 'info');
+      return;
+    }
+
     queueFiles = incoming;
     populateQueue(queueFiles);
      const wrap = document.getElementById('progress-bar-wrap');
