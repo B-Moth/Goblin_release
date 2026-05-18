@@ -52,6 +52,19 @@
 	the source language, while translation presets can explicitly opt into
 	English output.
 
+## 2026-05-18 — Installer & QA
+
+### Installer
+- Installer now attempts to start the Ollama daemon (Homebrew service) and
+	waits briefly for it to become reachable before attempting any model
+	pre-pulls. This reduces first-run failures where `ollama pull` would
+	fail because the server was not running.
+
+### QA / release tooling
+- Added a one-shot automated release QA script and a manual checklist to
+	validate the Ollama local-editing flow prior to shipping: `scripts/e2e_ollama_release_check.sh` and
+	`scripts/E2E_OLLAMA_CHECKLIST.md`.
+
 ## Goblin v1.1 changelog :
 
 ## Fixes :
