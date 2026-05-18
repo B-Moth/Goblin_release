@@ -1017,6 +1017,12 @@ def create_app(output_dir: str = "transcriptions", offline: bool = False) -> Fla
         threading.Thread(target=do_shutdown, daemon=True).start()
         return jsonify({"ok": True, "message": "Arrêt en cours..."})
 
+    @app.route("/browser-heartbeat", methods=["POST"])
+    def browser_heartbeat():
+        """Refresh the browser activity timestamp used by the shutdown watchdog."""
+        app.config["BROWSER_LAST_SEEN"] = time.monotonic()
+        return jsonify({"ok": True})
+
     @app.route("/quit", methods=["POST"])
     def quit_app():
         """Terminate the process after the response is sent."""
@@ -1107,13 +1113,31 @@ def run_gui(output_dir: str = "transcriptions", host: str = "127.0.0.1", port: i
         print("Warning: cannot write PID file; single-instance guard disabled.")
 
     app = create_app(output_dir=output_dir, offline=offline)
+    app.config["BROWSER_LAST_SEEN"] = time.monotonic()
+    browser_shutdown_timeout = 20.0
 
     # Create a werkzeug server that can be shut down via the /shutdown endpoint
     server = make_server(host, port, app, threaded=True)
+
+    watchdog_stop = threading.Event()
+
+    def _watch_browser_activity() -> None:
+        while not watchdog_stop.wait(1.0):
+            last_seen = float(app.config.get("BROWSER_LAST_SEEN", 0.0) or 0.0)
+            if time.monotonic() - last_seen > browser_shutdown_timeout:
+                print("No browser heartbeat received; shutting down Goblin.")
+                try:
+                    server.shutdown()
+                except Exception:
+                    pass
+                break
     
     # Run server in a background thread so we can wait for it to shut down
     server_thread = threading.Thread(target=server.serve_forever, daemon=False)
     server_thread.start()
+
+    watchdog_thread = threading.Thread(target=_watch_browser_activity, daemon=True)
+    watchdog_thread.start()
 
     # Open browser slightly after server starts
     threading.Timer(1.0, lambda: webbrowser.open(url)).start()
@@ -1127,6 +1151,7 @@ def run_gui(output_dir: str = "transcriptions", host: str = "127.0.0.1", port: i
         print("\nArrêt du serveur...")
         server.shutdown()
     finally:
+        watchdog_stop.set()
         # Remove PID file on clean exit
         try:
             pidf.unlink(missing_ok=True)

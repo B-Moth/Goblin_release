@@ -1653,6 +1653,29 @@
    window.addEventListener('pagehide', notifyGoblinShutdownOnClose);
    window.addEventListener('beforeunload', notifyGoblinShutdownOnClose);
 
+  let goblinHeartbeatTimer = null;
+
+  function sendGoblinHeartbeat() {
+    fetch('/browser-heartbeat', {method: 'POST', keepalive: true}).catch(() => {});
+  }
+
+  function startGoblinHeartbeat() {
+    if (goblinHeartbeatTimer) return;
+    sendGoblinHeartbeat();
+    goblinHeartbeatTimer = setInterval(sendGoblinHeartbeat, 5000);
+  }
+
+  function stopGoblinHeartbeat() {
+    if (goblinHeartbeatTimer) {
+      clearInterval(goblinHeartbeatTimer);
+      goblinHeartbeatTimer = null;
+    }
+  }
+
+  startGoblinHeartbeat();
+  window.addEventListener('pagehide', stopGoblinHeartbeat);
+  window.addEventListener('beforeunload', stopGoblinHeartbeat);
+
    function removeQueueItem(index) {
      // If removing an item before it is processed, remove from queue and refresh UI
      index = Number(index);
