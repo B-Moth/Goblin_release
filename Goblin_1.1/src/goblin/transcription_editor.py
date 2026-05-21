@@ -18,7 +18,7 @@ _CONFIG_PATH = Path(__file__).resolve().with_name("editor_prompts.json")
 _FRONTMATTER_RE = re.compile(r"^---\n.*?\n---\n", flags=re.DOTALL)
 _TRIPLE_FENCE_RE = re.compile(r"^```(?:md|markdown)?\n(.*)\n```\s*$", flags=re.DOTALL | re.IGNORECASE)
 
-_DEFAULT_EDITOR_CONFIG: dict[str, Any] = {
+_DEFAULT_EDITOR_SETTINGS: dict[str, Any] = {
     "default_provider": "local",
     "online_model": "gpt-4.1-mini",
     "local_base_url": "http://127.0.0.1:11434/v1",
@@ -35,89 +35,25 @@ _DEFAULT_EDITOR_CONFIG: dict[str, Any] = {
     },
     "temperature": 0.2,
     "max_tokens": 4096,
-    "system_prompt": (
-        "You are a careful editorial assistant. Rewrite only from the transcription provided. "
-        "Do not invent facts, do not add context, and do not omit meaningful information. "
-        "Language rule (strict): keep the output in the same language as the transcription unless the selected preset explicitly requests translation. "
-        "Return only Markdown content. "
-        "Do not add any introduction, explanation, commentary, suggestions, code fences, or meta text."
-    ),
-    "presets": {
-        "interview": {
-            "label": "Interview",
-            "slug": "interview",
-            "prompt": (
-                "Rewrite the transcription as an interview in the style of a magazine or newspaper interview. "
-                "Do not correct spelling, grammar, punctuation, or wording. Do not add, remove, or omit anything. "
-                "Preserve all errors and repetitions exactly as they appear. Only reformat the transcription as an interview."
-            ),
-        },
-        "resume": {
-            "label": "Résumé",
-            "slug": "resume",
-            "prompt": (
-                "Summarize the transcription by extracting the relevant information and writing a relatively short and clear text. "
-                "Keep only the facts present in the transcription. Do not invent anything. Do not add recommendations or commentary."
-            ),
-        },
-        "documentation": {
-            "label": "Documentation",
-            "slug": "documentation",
-            "prompt": (
-                "Rewrite the transcription as a structured and clear document. Present the information like technical documentation, a report, or a field note. "
-                "Organize the content with useful Markdown headings and sections. Keep only the information that is present in the transcription. "
-                "Do not invent or infer anything."
-            ),
-        },
-        "conversation": {
-            "label": "Conversation (expérimental)",
-            "slug": "conversation",
-            "prompt": (
-                "Rewrite the transcription as a natural conversation transcript with clear speaker turns. "
-                "Important: if speaker identity is uncertain, do not guess names, gender, role, or exact voice count. "
-                "Use neutral labels like 'Intervenant 1', 'Intervenant 2', and merge turns when attribution is ambiguous. "
-                "Preserve the original meaning, tone and key details. Do not invent content and do not omit meaningful information."
-            ),
-        },
-        "translate_english": {
-            "label": "Traduire en anglais",
-            "slug": "translate_english",
-            "prompt": (
-                "Translate the transcription into natural English while preserving meaning, tone and factual details. "
-                "If the transcription is already in English, keep the original text unchanged except for minimal formatting cleanup. "
-                "Do not add, remove, or invent information."
-            ),
-        },
-        "custom": {
-            "label": "Personnalisé",
-            "slug": "custom",
-            "prompt": (
-                "Apply the user's custom formatting instructions exactly. Keep only information present in the transcription. "
-                "Do not invent facts, do not add context, and do not omit meaningful information. Return only Markdown content, with no introduction, "
-                "no explanation, no suggestions, and no meta text. The output must remain in the same language as the transcription."
-            ),
-        },
-    },
 }
 
 
 def load_editor_config() -> dict[str, Any]:
-    """Load the transcription editor configuration from the bundled JSON file."""
-    data = dict(_DEFAULT_EDITOR_CONFIG)
+    """Load the transcription editor configuration from the bundled JSON file.
+
+    The prompt text itself lives only in `editor_prompts.json` so there is a single
+    source of truth for presets and system instructions.
+    """
+    data = dict(_DEFAULT_EDITOR_SETTINGS)
     if _CONFIG_PATH.exists():
         try:
             file_data = json.loads(_CONFIG_PATH.read_text(encoding="utf-8"))
             if isinstance(file_data, dict):
-                data.update({k: v for k, v in file_data.items() if k != "presets"})
+                data.update(file_data)
                 if "model" in file_data and "online_model" not in file_data:
                     data["online_model"] = file_data["model"]
-                file_presets = file_data.get("presets")
-                if isinstance(file_presets, dict):
-                    merged_presets = dict(_DEFAULT_EDITOR_CONFIG["presets"])
-                    merged_presets.update(file_presets)
-                    data["presets"] = merged_presets
         except Exception:
-            # Fall back to the in-code defaults if the JSON file is missing or malformed.
+            # Fall back to the embedded non-prompt defaults if the JSON file is missing or malformed.
             pass
     if "presets" not in data or not isinstance(data["presets"], dict):
         raise ValueError("editor_prompts.json must define a 'presets' mapping")

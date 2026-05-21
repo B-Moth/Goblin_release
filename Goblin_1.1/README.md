@@ -4,68 +4,60 @@ Built with ❤️ for *Les Feuillets* by Lucas
 # 🧙 Goblin 1.1 – Getting Started
 
 Goblin transcribes audio and converts handwritten images to editable Markdown files.
+For now the UI is french-only.
 
 ## ⚡ Quick Start
 
-### Already Have the Executable? (see dist folder if existing) 
+### Already Have the Executable? (see dist/ folder) 
 
 **Windows:** Double-click `dist/Goblin_1.1.exe`  
 **macOS:** Open `dist/Goblin_1.1.app`  
 **Linux:** Run `chmod +x dist/Goblin_1.1 && ./dist/Goblin_1.1`
 
-### No Executable? Build from Source
+### No Executable? First, install dependencies :
 
 **Windows:**
 ```powershell
 py -3.12 -m pip install --upgrade pip
 py -3.12 -m pip install -r build/REQUIREMENTS.txt
-py -3.12 build/installers/build.py
-py -3.12 build/installers/install_desktop.py
 ```
 
 **macOS/Linux:**
 ```bash
 python3.12 -m pip install --upgrade pip
 python3.12 -m pip install -r build/REQUIREMENTS.txt
-python3.12 build/installers/build.py
-python3.12 build/installers/install_desktop.py
 ```
 
-Can take up to 10-15 minutes.
+It can and probably will take a few minutes.
 
 ---
 
-## 🚀 Launching Goblin (from terminal)
+### Run from source WITHOUT building the exec (usefull for testing changes, no need to build)
 
-You can run the web UI directly from source or after installing the package.
-
-- Run the installed console script (after `pip install -e build`):
 ```bash
 goblin --web
 ```
-- Run from the repository without installing (requires Python to find `src`):
-```bash
-PYTHONPATH=src python -m goblin.main --web
-# or
-PYTHONPATH=src python src/goblin/main.py --web
-```
-- Desktop launcher (finds a free port automatically):
-```bash
-python src/goblin_desktop.py
-```
 
-Specify a custom port if 5000 is in use:
+Specify a custom port if you need:
 ```bash
 goblin --web -p 5001
-PYTHONPATH=src python -m goblin.main --web -p 5001
-```
-
-If you changed code and want the installed `goblin` script to reflect it, rebuild the editable install:
-```bash
-pip install -e build
 ```
 
 ---
+
+### Build the self-contained exec (will NOT reflect changes in the code made after building it)
+
+**Windows:**
+```powershell
+py -3.12 build/installers/build.py
+py -3.12 build/installers/install_desktop.py
+```
+
+**macOS/Linux:**
+```bash
+python3.12 build/installers/build.py
+python3.12 build/installers/install_desktop.py
+```
 
 ---
 
@@ -78,11 +70,6 @@ pip install -e build
 
 ---
 
-## 📚 Documentation
-
-
----
-
 ## ✅ System Requirements
 
 - **OS:** Windows 10+, macOS 11+, Ubuntu 20.04+
@@ -92,52 +79,28 @@ pip install -e build
 
 ## Features
 
-- **🔌 Offline Mode** — Uses local faster-whisper + TrOCR/PaddleOCR
+- **🔌 Offline transcription Mode** — Uses local faster-whisper + TrOCR/PaddleOCR
 - **🌐 Online Mode** — Uses OpenAI Whisper API + GPT-4o-mini (requires API key)
-- **🪄 Smart Naming** — Optionally renames saved transcriptions with GPT-3.5-turbo (requieres API key)
+- **🪄 Smart Naming** — Optionally renames saved transcriptions with GPT-3.5-turbo (requieres API key for now)
 - **📝 Markdown Output** — Editable, searchable text files
 - **📁 Batch Processing** — Queue multiple files for processing
-- **✍️ Review Assistant** — Rewrites a selected transcription into a cleaned `.md` version with a local Qwen model by default, while keeping the original file untouched
+- **✍️ Review Assistant** — Rewrites a selected transcription into a cleaned `.md` version with a local Qwen model by default, while keeping the original file untouched.
 
+You can find and change the prompts used for the defaults editing options in src/goblin/editor_prompts.json .
 The review assistant also supports a **custom format** option: write your own formatting request in the dialog, and Goblin will apply it with the same anti-hallucination rules, the same language as the transcription, and Markdown-only output.
 
-By default Goblin uses **Qwen 7B Instruct** locally through Ollama for the review assistant. If you want a larger local model, choose **Qwen 14B Instruct** in the dialog. If you prefer the old online workflow, switch the mode to **En ligne (OpenAI)** and provide an API key.
+By default Goblin uses **Qwen 7B Instruct** locally through Ollama for the review assistant. If you want a larger local model, choose **Qwen 14B Instruct** in the dialog. If you prefer a faster and more powerfull online workflow, switch the mode to **En ligne (OpenAI)** and provide an API key.
 
-## Reviewing a transcription
+## Edit a transcription
 
-When a transcription is open in the viewer, click **Du nerf, insecte !** to open the rewrite dialog.
+When a transcription is open in the viewer, click **Du nerf, insecte !** to open the automated editor.
 
-- The dialog defaults to the local Qwen mode; install Ollama and pull `qwen2.5:7b-instruct` to use it right away.
 - Choose **Qwen 14B Instruct** if you want the larger local model.
 - Switch to **En ligne (OpenAI)** if you want the API-backed workflow instead.
 - Choose one of the config-driven presets: Interview, Résumé, or Documentation.
 - Or choose **Personnalisé** and type your own formatting request.
 - Click **Aperçu** first to generate a draft, then **Enregistrer** to save the exact markdown result as a new file.
 - Goblin saves the rewritten result as a new Markdown file and keeps the original transcription as-is.
-
-### Status & background downloads
-
-- If a local model is missing, the editor warns before a large download and
-  pulls the model in the background.
-- A status indicator near the editor shows when a model is available,
-  downloading, or not installed.
-- Use **Aperçu** to trigger a background download; the preview resumes
-  automatically once the model is ready.
-
-### New presets
-
-- **Conversation (expérimental)** formats multi-speaker transcripts
-  conservatively with neutral labels when attribution is unclear.
-- **Traduire en anglais** translates non-English input into English, while
-  leaving English input unchanged apart from minor formatting cleanup.
-
-### Release QA
-
-- A one-shot release QA script and manual checklist are included at
-  `scripts/e2e_ollama_release_check.sh` and `scripts/E2E_OLLAMA_CHECKLIST.md`.
-- Run the script on a machine with Ollama, or where it can be installed, to
-  validate server readiness, model presence, Flask endpoints, and the local
-  rewrite smoke test.
 
 ## Uninstall
 
@@ -193,16 +156,6 @@ If Goblin appears to be already running or the app opens twice, use the helper s
 ```
 
 This script attempts to stop processes whose command line contains `Goblin` and removes the temporary PID file used by the single-instance guard.
-
-## 🔁 Update Version (!! Bugged !!)
-
-When you want to bump the release name shown in the README, installer output, and generated filenames:
-
-1. Update the version constant in [version.py](version.py).
-2. Run `python build/sync_version.py` to refresh the README and docs.
-3. Rebuild with `python build/installers/build.py` if you want fresh release artifacts.
-
-The package shim in [src/goblin/version.py](src/goblin/version.py) keeps existing imports working.
 
 ---
 
