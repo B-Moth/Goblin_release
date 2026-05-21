@@ -11,9 +11,3 @@ paddleocr>=2.8.0
 paddlepaddle>=2.6.0
 transformers>=4.42.0
 torch>=2.2.0
-
-# Optional: Ollama is required only for the local Qwen editing/runtime.
-# Ollama is primarily a system binary; if a Python package/wrapper is available
-# you can install it via pip. This line is optional and intended to help
-# automated installers include local-model support when possible.
-ollama>=0.1.0
