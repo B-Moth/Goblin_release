@@ -61,12 +61,16 @@ def _install_dependencies() -> None:
     PyInstaller analyses packages that are importable at *build time*.  If a
     dependency is missing from the venv, its modules are reported as
     "hidden import not found" and silently omitted from the bundle, causing
-    ImportError at runtime.  Running ``pip install -e .`` before the build
-    ensures every dependency is present for analysis.
+    ImportError at runtime.  Running ``pip install -e build`` before the build
+    also restores the ``goblin`` console script in the active environment.
     """
     print("Installing / verifying project dependencies…")
     subprocess.check_call(
         [sys.executable, "-m", "pip", "install", "-r", str(REPO_ROOT / "build" / "REQUIREMENTS.txt"), "--quiet"],
+        cwd=REPO_ROOT,
+    )
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "-e", str(BUILD_DIR), "--no-deps", "--quiet"],
         cwd=REPO_ROOT,
     )
 

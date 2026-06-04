@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "goblin"
 dynamic = ["version"]
 description = "Le Gobelin – outil de transcription pour le journal Les Feuillets"
-readme = "../docs/README.md"
+readme = "README.md"
 requires-python = ">=3.9,<3.13"
 dependencies = [
     "openai>=1.0.0",
