@@ -3,7 +3,7 @@
 
 Goblin is a desktop transcription assistant for turning audio recordings and handwritten notes into editable Markdown. It can run with cloud APIs or local models, so the user can choose between convenience, privacy, and hardware requirements.
 
-The interface is currently French-only. The project was built for *Les Feuillets* by Lucas.
+The interface is currently French-only.
 
 ## What it does
 
