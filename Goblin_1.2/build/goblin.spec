@@ -30,7 +30,7 @@ SRC_DIR = REPO_ROOT / "src"
 sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(SRC_DIR))
 
-from version import APP_BASENAME
+from version import APP_BASENAME, VERSION
 
 a = Analysis(
     ["../src/goblin_desktop.py"],
@@ -51,6 +51,8 @@ a = Analysis(
         "goblin.formatter",
         "goblin.metadata",
         "goblin.smart_naming",
+        "goblin.ollama_runtime",
+        "goblin.transcription_editor",
         # Flask / Werkzeug internals often missed by the hook
         "flask",
         "jinja2",
@@ -70,6 +72,11 @@ a = Analysis(
         "PIL",
         "PIL.Image",
         "faster_whisper",
+        "ollama",
+        "paddleocr",
+        "paddle",
+        "torch",
+        "transformers",
     ],
     hookspath=[],
     hooksconfig={},
@@ -128,7 +135,7 @@ if sys.platform == "darwin":
         bundle_identifier="com.lesfeuillets.goblin",
         info_plist={
             "NSHighResolutionCapable": True,
-            "CFBundleShortVersionString": "0.1.0",
+            "CFBundleShortVersionString": VERSION,
         },
     )
 

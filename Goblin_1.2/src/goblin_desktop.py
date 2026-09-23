@@ -34,7 +34,7 @@ def main() -> None:
     # Find an available port starting from 5000
     port = find_available_port(5000)
     # Use default parameters for the desktop application
-    run_gui(output_dir="transcriptions", port=port, offline=False)
+    run_gui(output_dir="transcriptions", port=port, offline=True)
 
 
 if __name__ == "__main__":

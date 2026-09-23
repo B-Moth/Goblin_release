@@ -6,6 +6,7 @@
 
 # Build artifacts
 dist/
+build/goblin/
 *.egg-info/
 __pycache__/
 *.pyc

@@ -1,7 +1,7 @@
 Built with ❤️ for *Les Feuillets* by Lucas
 
 
-# 🧙 Goblin 1.1 – Getting Started
+# 🧙 Goblin 1.2 – Getting Started
 
 Goblin transcribes audio and converts handwritten images to editable Markdown files.
 For now the UI is french-only.
@@ -10,9 +10,9 @@ For now the UI is french-only.
 
 ### Already Have the Executable? (see dist/ folder) 
 
-**Windows:** Double-click `dist/Goblin_1.1.exe`  
-**macOS:** Open `dist/Goblin_1.1.app`  
-**Linux:** Run `chmod +x dist/Goblin_1.1 && ./dist/Goblin_1.1`
+**Windows:** Double-click `dist/Goblin_1.2.exe`  
+**macOS:** Open `dist/Goblin_1.2.app`  
+**Linux:** Run `chmod +x dist/Goblin_1.2 && ./dist/Goblin_1.2`
 
 ---
 
@@ -194,9 +194,9 @@ What this does:
 | Issue | Solution |
 |-------|----------|
 | **Python not found** | Install Python 3.11 or 3.12 from python.org and use `py -3.11` or `py -3.12` |
-| **Permission denied** | Run: `chmod +x Goblin_1.1` (Linux/macOS) |
+| **Permission denied** | Run: `chmod +x Goblin_1.2` (Linux/macOS) |
 | **"Executable not found"** | Run `python build/installers/build.py` first |
-| **macOS "App is damaged"** | Run: `xattr -d com.apple.quarantine /Applications/Goblin_1.1.app` |
+| **macOS "App is damaged"** | Run: `xattr -d com.apple.quarantine /Applications/Goblin_1.2.app` |
 | **Missing dependencies** | Run: `pip install -r build/REQUIREMENTS.txt` |
 | **Slow first run** | Normal – offline mode downloads models (~2 GB) on first use |
 
